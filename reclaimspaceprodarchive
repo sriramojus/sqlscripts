@@ -4,4 +4,6 @@ select thread#,max(sequence#) from v$archived_log where RESETLOGS_CHANGE#=(selec
 ##To Reclaim space in PROD Archive mount, check prod and dr are in sync and check if latest backups compeleted normal
 
 cd /nsr/scripts/oracle
-delete force noprompt archivelog all backed up 1 times to device type sbt completed before 'sysdate-1/2';
+
+rman target /
+RMAN> delete force noprompt archivelog all backed up 1 times to device type sbt completed before 'sysdate-1/2';
