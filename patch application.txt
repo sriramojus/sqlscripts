@@ -1,0 +1,19 @@
+ select release_name from fnd_product_groups;
+
+
+
+To check delta version
+select abbreviation ,codelevel from ad_trackable_entities where abbreviation in( 'ad','txk','pj_pf','atg_pf' ) order by abbreviation;
+
+
+
+12.2.3
+R12.AD.C.delta.5
+R12.ATG_PF.C.delta.4
+R12.PJ_PF.C.delta.4
+R12.TXK.C.delta.5
+
+patch is downloaded to /home/applteb1/070219
+
+waiting for user to let us know the downtime.
+

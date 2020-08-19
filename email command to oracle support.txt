@@ -1,0 +1,3 @@
+curl -k -v -T INVTAZ_Analyzer_PEBUE1_2019-04-25_04_35.html -u cms-ind-dba@itconvergence.com https://transport.oracle.com/upload/issue/3-19766470571/
+
+

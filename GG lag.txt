@@ -1,0 +1,20 @@
+GG lag
+
+
+select distinct  TABLENAME,(ROW_CNT_SOURCE-ROW_CNT_TARGET) LAG
+from gg_lag_status
+where (ROW_CNT_SOURCE-ROW_CNT_TARGET) <> 0 order by TABLENAME;
+
+
+
+select * from ggadmin.gg_switch;(to check if it stopped by automation)
+
+
+Also these are the command we need to use to clear and monitor the session.
+
+ 
+
+Kill REPLICAT RE_OFSL2  ( This command used to clear hanged REPLICAT session)
+ 
+
+send REPLICAT RE_OFSL2,status ( This command is used to see the status of REPLICAT)

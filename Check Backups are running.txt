@@ -1,0 +1,82 @@
+======================================
+To Check Backups are running or not
+=======================================
+set lines 200 pages 99999
+col OUTPUT_BYTES_DISPLAY for a20;
+col INPUT_TYPE for a20;
+col TIME_TAKEN_DISPLAY for a20;
+col START_TIME for a30;
+col END_TIME for a20;
+col status for a30;
+select session_key,
+input_type,
+status,
+to_char(start_time,'yyyy-mm-dd hh24:mi') start_time,
+to_char(end_time,'yyyy-mm-dd hh24:mi')   end_time,
+output_bytes_display,
+time_taken_display
+from v$rman_backup_job_details
+order by session_key ;
+
+
+delete force noprompt archivelog all like '+OBIPROD_FRA/OBIPROD/ARCHIVELOG%' backed up 2 times to device type sbt
+delete force noprompt archivelog all backed up 2 times to device type sbt;
+
+======================================
+Begin backup mode
+==========================================
+alter database begin backup;
+
+=======================
+Dismount
+=========================
+
+alter diskgroup EBSM_DATA dismount;
+
+
+=================================================================================================================
+Kick off full- backup
+===============================
+
+
+rman target /  <<EOF >>/backup/rmanbkp/bkp.log
+run {
+allocate channel d1 type disk;
+allocate channel d2 type disk;
+allocate channel d3 type disk;
+allocate channel d4 type disk;
+allocate channel d5 type disk;
+allocate channel d6 type disk;
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+crosscheck archivelog all;
+CONFIGURE BACKUP OPTIMIZATION OFF;
+backup AS COMPRESSED BACKUPSET archivelog all format '/backup/rmanbkp/archs_%U.rman';
+BACKUP AS COMPRESSED BACKUPSET DATABASE format '/backup/rmanbkp/DB_%U.rman';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+backup AS COMPRESSED BACKUPSET archivelog all format '/backup/rmanbkp/archs_%U.rman';
+backup current controlfile format '/backup/rmanbkp/ctl_%U.rman';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+backup AS COMPRESSED BACKUPSET archivelog all format '/backup/rmanbkp/archs_%U.rman';
+CONFIGURE BACKUP OPTIMIZATION ON;
+}
+exit;
+
+=======================================================
+
+
+
+
+
+
+

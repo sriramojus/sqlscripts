@@ -1,0 +1,18 @@
+Hi Team,
+
+Whenever you get Inactive sessions alert.
+
+Kindly use below sql to check no of inactive sessions on server:
+ 
+select count(*) from v$session where status='INACTIVE' and last_call_et>3600*3 and EVENT='SQL*Net message from client' and PROGRAM like '%frmweb%'; 
+
+Action:
+Send all those session details to respective Primary DBA and perform necessary.
+
+Kindy use belwo sql to get sessions details:
+
+set pages 300 lines 300
+col EVENT for a40
+col MACHINE for a35
+col MODULE for a50
+select SID,USERNAME,PROCESS,MACHINE,TO_CHAR(LOGON_TIME, 'YYYY-MM-DD HH24:MI:SS'),LAST_CALL_ET,EVENT from v$session where status='INACTIVE' and last_call_et>3600*3 and EVENT='SQL*Net message from client' and PROGRAM like 'frmweb%' order by LOGON_TIME;

@@ -1,0 +1,1013 @@
+1)To check SCN :
+
+select min(fhscn) from x$kcvfh;
+
+SQL> select min(fhscn) from x$kcvfh;
+
+MIN(FHSCN)
+----------------
+48670999790
+
+SQL> col current_scn for 9999999999999999999999
+SQL>
+SQL> select current_scn from v$database;
+
+            CURRENT_SCN
+-----------------------
+            48670999789
+===============================================================
+
+2)Edit the file (scn_backup.sh)and change the SCN with current SCN:
+
+
+rman target / <<EOF >>/ud1109/scn_bkp05MAY2019/rman_arch_bkp.log
+
+run
+{
+allocate channel c1 type disk;
+allocate channel c2 type disk;
+allocate channel c3 type disk;
+allocate channel c4 type disk;
+backup as compressed backupset incremental from scn 51358488884 database format '/ud1109/scn_bkp05MAY2019/incr_rman_%d_%M%D%Y_%p_%s.bkp';
+BACKUP CURRENT CONTROLFILE FOR STANDBY FORMAT '/ud1109/scn_bkp05MAY2019/ForStandbyCTRL.bck';
+}
+exit;
+EOF
+
+3)Run it in nohup
+
+nohup sh scn_backup.sh &
+
+4)monitor the log file .......
+
+================================================================================================================================
+nohup rsync -aRtvz -e 'ssh -p 873' * oraprod@rbns-365-tdb01:/ud1003/scn_backup07mar2019/ &
+nohup rsync -aRtvz -e 'ssh -p 873' * oraprod@rbns-365-tdb01:/ud1003/scn_backup07mar2019/ &
+
+
+
+
+
+nohup rsync -aRtvz -e 'ssh -p 873' incr_rman_PEBEV1_12312018_1_218299.bkp orapeb1@evhc-365-pdb01:/ud1107/incr_scn_18Sep18
+nohup rsync -aRtvz -e 'ssh -p 873' incr_rman_PEBEV1_12312018_1_218302.bkp orapeb1@evhc-365-pdb01:/ud1107/incr_scn_18Sep18
+nohup rsync -aRtvz -e 'ssh -p 873' incr_rman_PEBEV1_12312018_1_218305.bkp orapeb1@evhc-365-pdb01:/ud1107/incr_scn_18Sep18
+nohup rsync -aRtvz -e 'ssh -p 873' incr_rman_PEBEV1_12312018_1_218306.bkp orapeb1@evhc-365-pdb01:/ud1107/incr_scn_18Sep18
+nohup rsync -aRtvz -e 'ssh -p 873' incr_rman_PEBEV1_12312018_1_218307.bkp orapeb1@evhc-365-pdb01:/ud1107/incr_scn_18Sep18
+
+==========================================================================================================================================
+
+
+RMAN> list incarnation;
+
+Run LIST INCARNATION OF DATABASE to obtain possible key values. After you issue RESET DATABASE TO INCARNATION , you can run RMAN commands such as FLASHBACK DATABASE , RESTORE , and RECOVER . In NOCATALOG mode, you must mount a control file that contains information about the incarnation that you want to recover.
+
+using target database control file instead of recovery catalog
+
+List of Database Incarnations
+DB Key  Inc Key DB Name  DB ID            STATUS  Reset SCN  Reset Time
+------- ------- -------- ---------------- --- ---------- ----------
+3       3       PEBEV1   4098554771       ORPHAN  21576819198 05-FEB-14
+1       1       PEBEV1   4098554771       PARENT  21775946430 21-FEB-14
+2       2       PEBEV1   4098554771       CURRENT 21775950867 21-FEB-14
+
+RMAN> report schema; --To get a list of all datafiles of our database, use the following command: 
+
+RMAN-06139: WARNING: control file is not current for REPORT SCHEMA
+Report of database schema for database with db_unique_name PEBEV1_DR
+
+List of Permanent Datafiles
+===========================
+File Size(MB) Tablespace           RB segs Datafile Name
+---- -------- -------------------- ------- ------------------------
+1    2290     SYSTEM               ***     /ud1102/PEBEV1/oradata/system01.dbf
+2    1770     SYSTEM               ***     /ud1102/PEBEV1/oradata/system02.dbf
+3    1500     SYSTEM               ***     /ud1102/PEBEV1/oradata/system03.dbf
+4    1566     SYSTEM               ***     /ud1102/PEBEV1/oradata/system04.dbf
+5    1845     SYSTEM               ***     /ud1102/PEBEV1/oradata/system05.dbf
+6    2070     SYSTEM               ***     /ud1102/PEBEV1/oradata/system06.dbf
+7    2029     SYSTEM               ***     /ud1102/PEBEV1/oradata/system07.dbf
+8    2599     SYSTEM               ***     /ud1102/PEBEV1/oradata/system08.dbf
+9    5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_001.dbf
+10   5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_002.dbf
+11   7168     SYSAUX               ***     /ud1102/PEBEV1/oradata/sysaux01.dbf
+12   6144     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data81.dbf
+13   3        APPS_UNDOTS2         ***     /ud1101/PEBEV1/oradata/apps_undots201.dbf
+14   5446     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab01.dbf
+15   4400     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data01.dbf
+16   4374     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data02.dbf
+17   4352     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data03.dbf
+18   4383     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data04.dbf
+19   4362     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data05.dbf
+20   4512     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data06.dbf
+21   4356     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data07.dbf
+22   4338     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data08.dbf
+23   5002     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab02.dbf
+24   8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data38.dbf
+25   5120     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index01.dbf
+26   4100     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index02.dbf
+27   2300     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index03.dbf
+28   2270     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index04.dbf
+29   4998     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab03.dbf
+30   5082     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab04.dbf
+31   5084     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab05.dbf
+32   8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data39.dbf
+33   4350     LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index01.dbf
+34   4328     LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index02.dbf
+35   4332     LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index03.dbf
+36   5085     XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab06.dbf
+37   15360    XXEISD               ***     /ud1102/PEBEV1/oradata/xxeis_tab07.dbf
+38   10240    XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab08.dbf
+39   12288    XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab09.dbf
+40   3072     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab10.dbf
+41   2593     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab11.dbf
+42   2594     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab12.dbf
+43   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx61.dbf
+44   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx62.dbf
+45   8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data82.dbf
+46   8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data83.dbf
+47   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data84.dbf
+48   1690     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab13.dbf
+49   1690     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab14.dbf
+50   1626     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab15.dbf
+51   3615     APPS_TS_INTERFACE    ***     /ud1101/PEBEV1/oradata/apps_ts_interface03.dbf
+52   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx63.dbf
+53   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx64.dbf
+54   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data85.dbf
+55   8192     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media04.dbf
+56   8192     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media05.dbf
+57   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data86.dbf
+58   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data87.dbf
+59   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data88.dbf
+60   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data89.dbf
+61   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx65.dbf
+62   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx66.dbf
+63   5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data90.dbf
+64   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data91.dbf
+65   5120     APPS_TS_SUMMARY      ***     /ud1102/PEBEV1/oradata/apps_ts_summary02.dbf
+66   3500     APPS_TS_SUMMARY      ***     /ud1101/PEBEV1/oradata/apps_ts_summary03.dbf
+67   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx67.dbf
+68   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx68.dbf
+69   5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_003.dbf
+70   4994     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_004.dbf
+71   5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_005.dbf
+72   9216     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media06.dbf
+73   5000     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media07.dbf
+74   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data92.dbf
+75   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data93.dbf
+76   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data94.dbf
+77   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx69.dbf
+78   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx70.dbf
+79   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx71.dbf
+80   1035     SYSTEM               ***     /ud1102/PEBEV1/oradata/system10.dbf
+81   10240    APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_006.dbf
+82   10240    APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_007.dbf
+83   5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_008.dbf
+84   5000     APPS_UNDOTS1         ***     /ud1101/PEBEV1/oradata/apps_undots1_009.dbf
+85   300      XXEISX               ***     /ud1102/PEBEV1/oradata/xxeis_ind_02.dbf
+86   1200     XXEISX               ***     /ud1102/PEBEV1/oradata/xxeis_ind_03.dbf
+87   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data95.dbf
+88   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data96.dbf
+89   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data97.dbf
+90   5000     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media08.dbf
+91   10240    APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media09.dbf
+92   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx72.dbf
+93   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx73.dbf
+94   5000     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab16.dbf
+95   5000     XXEISD               ***     /ud1101/PEBEV1/oradata/xxeis_tab17.dbf
+96   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data98.dbf
+97   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data99.dbf
+98   8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data100.dbf
+99   5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx74.dbf
+100  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx75.dbf
+101  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data101.dbf
+102  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data102.dbf
+103  468      EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data11.dbf
+104  442      EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data12.dbf
+105  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx76.dbf
+106  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx77.dbf
+107  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data103.dbf
+108  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data104.dbf
+109  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data105.dbf
+110  6771     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx78.dbf
+111  3962     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx79.dbf
+112  5000     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx80.dbf
+113  2316     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data12.dbf
+114  8000     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data13.dbf
+115  8000     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data14.dbf
+116  485      LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index04.dbf
+117  462      LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index05.dbf
+118  462      LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index06.dbf
+119  2048     LARGE_INDEX          ***     /ud1101/PEBEV1/oradata/large_index07.dbf
+120  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data106.dbf
+121  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data107.dbf
+122  100      ITCMON               ***     /ud1102/PEBEV1/oradata/itcmon01.dbf
+123  8002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data108.dbf
+124  8002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data109.dbf
+125  6002     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx81.dbf
+126  8192     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx82.dbf
+127  6002     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx83.dbf
+128  10240    APPS_TS_MEDIA        ***     /ud1102/PEBEV1/oradata/apps_ts_media10.dbf
+129  8192     APPS_TS_MEDIA        ***     /ud1102/PEBEV1/oradata/apps_ts_media11.dbf
+130  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data110.dbf
+131  8002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx84.dbf
+132  7396     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx85.dbf
+133  25600    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx86.dbf
+134  1712     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data01.dbf
+135  1712     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data02.dbf
+136  1762     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data03.dbf
+137  1700     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data04.dbf
+138  1812     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data05.dbf
+139  1712     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data06.dbf
+140  1712     EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emscsumm_data07.dbf
+141  4942     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data01.dbf
+142  4977     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data02.dbf
+143  4979     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data03.dbf
+144  4979     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data04.dbf
+145  5002     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data05.dbf
+146  5002     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data06.dbf
+147  4906     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data07.dbf
+148  5002     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data08.dbf
+149  2048     EMSCSUMM_IDX         ***     /ud1101/PEBEV1/oradata/emscsumm_idx01.dbf
+150  3072     EMSCSUMM_IDX         ***     /ud1101/PEBEV1/oradata/emscsumm_idx02.dbf
+151  1749     EMSCSUMM_IDX         ***     /ud1101/PEBEV1/oradata/emscsumm_idx03.dbf
+152  1767     EMSCSUMM_IDX         ***     /ud1101/PEBEV1/oradata/emscsumm_idx04.dbf
+153  1603     EMSCSUMM_IDX         ***     /ud1101/PEBEV1/oradata/emscsumm_idx05.dbf
+154  370      PORTAL               ***     /ud1101/PEBEV1/oradata/portal01.dbf
+155  7846     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data111.dbf
+156  25       ODM                  ***     /ud1101/PEBEV1/oradata/odm01.dbf
+157  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data112.dbf
+158  5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data40.dbf
+159  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data113.dbf
+160  7168     APPS_UNDOTS1         ***     /ud1102/PEBEV1/oradata/apps_undots1_010.dbf
+161  10240    APPS_UNDOTS1         ***     /ud1102/PEBEV1/oradata/apps_undots1_011.dbf
+162  18432    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx87.dbf
+163  20480    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx88.dbf
+164  22528    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx89.dbf
+165  26624    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx90.dbf
+166  22528    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx91.dbf
+167  25700    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data114.dbf
+168  26624    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data115.dbf
+169  26624    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data116.dbf
+170  30720    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data117.dbf
+171  100      AXF_TS               ***     /ud1103/PEBEV1/oradata/axf1.dbf
+172  100      XXIPM_TS             ***     /ud1103/PEBEV1/oradata/xxipm1.dbf
+173  6144     EMSC_DATA            ***     /ud1103/PEBEV1/oradata/emsc_data13.dbf
+174  7000     SYSAUX               ***     /ud1103/PEBEV1/oradata/sysaux02.dbf
+175  690      APPS_TS_NOLOGGING    ***     /ud1103/PEBEV1/oradata/apps_ts_nologging02.dbf
+176  10240    LARGE_INDEX          ***     /ud1103/PEBEV1/oradata/large_index08.dbf
+177  100      EMSCSUMM_DATA        ***     /ud1103/PEBEV1/oradata/emscsumm_data10.dbf
+178  4970     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data09.dbf
+179  4928     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data10.dbf
+180  1024     APPS_TS_SEED         ***     /ud1103/PEBEV1/oradata/apps_ts_seed02.dbf
+181  8192     APPS_TS_INTERFACE    ***     /ud1103/PEBEV1/oradata/apps_ts_interface04.dbf
+182  25600    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data118.dbf
+183  1200     EMSCSUMM_IDX         ***     /ud1103/PEBEV1/oradata/emscsumm_idx06.dbf
+184  15360    APPS_TS_MEDIA        ***     /ud1103/PEBEV1/oradata/apps_ts_media12.dbf
+185  6500     APPS_TS_SUMMARY      ***     /ud1103/PEBEV1/oradata/apps_ts_summary04.dbf
+186  400      APPS_TS_ARCHIVE      ***     /ud1103/PEBEV1/oradata/apps_ts_archive02.dbf
+187  2048     SYSTEM               ***     /ud1103/PEBEV1/oradata/system11.dbf
+188  25700    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data119.dbf
+189  5120     EMSC_DATA            ***     /ud1103/PEBEV1/oradata/emsc_data14.dbf
+190  100      EMSCSUMM_DATA        ***     /ud1103/PEBEV1/oradata/emscsumm_data11.dbf
+191  100      EMSCSUMM_DATA        ***     /ud1103/PEBEV1/oradata/emscsumm_data08.dbf
+192  100      EMSCSUMM_DATA        ***     /ud1101/PEBEV1/oradata/emsc_data09.dbf
+193  3047     EMSC_DATA            ***     /ud1101/PEBEV1/oradata/emsc_data10.dbf
+194  2971     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index05.dbf
+195  4793     LARGE_DATA           ***     /ud1101/PEBEV1/oradata/large_data11.dbf
+196  1784     SYSTEM               ***     /ud1102/PEBEV1/oradata/system09.dbf
+197  100      EMSCSUMM_DATA        ***     /ud1103/PEBEV1/oradata/emscsumm_data09.dbf
+198  10240    APPS_TS_MEDIA        ***     /ud1103/PEBEV1/oradata/apps_ts_media13.dbf
+199  25500    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data120.dbf
+200  26624    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data121.dbf
+201  30720    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data122.dbf
+202  2600     EMSCSUMM_IDX         ***     /ud1103/PEBEV1/oradata/emscsumm_idx07.dbf
+203  13312    APPS_TS_MEDIA        ***     /ud1103/PEBEV1/oradata/apps_ts_media14.dbf
+204  12000    LARGE_DATA           ***     /ud1103/PEBEV1/oradata/large_data15.dbf
+205  12288    LARGE_DATA           ***     /ud1103/PEBEV1/oradata/large_data16.dbf
+206  30720    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data123.dbf
+207  10240    APPS_TS_MEDIA        ***     /ud1103/PEBEV1/oradata/apps_ts_media15.dbf
+208  30720    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data124.dbf
+209  17000    APPS_TS_TX_DATA      ***     /ud1103/PEBEV1/oradata/apps_ts_tx_data125.dbf
+210  15360    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx92.dbf
+211  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx93.dbf
+212  20480    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data126.dbf
+213  20480    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data127.dbf
+214  24344    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data128.dbf
+215  20480    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data129.dbf
+216  25600    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data130.dbf
+217  25600    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data131.dbf
+218  22500    APPS_TS_MEDIA        ***     /ud1104/PEBEV1/oradata/apps_ts_media16.dbf
+219  8500     EMSC_DATA            ***     /ud1104/PEBEV1/oradata/emsc_data15.dbf
+220  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx94.dbf
+221  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx95.dbf
+222  2892     EMSC_INDEX           ***     /ud1101/PEBEV1/oradata/emsc_index06.dbf
+223  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx96.dbf
+224  8        INTFD                ***     /ud1101/PEBEV1/oradata/intfd01.dbf
+225  5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data41.dbf
+226  5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data42.dbf
+227  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx97.dbf
+228  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx98.dbf
+229  21900    APPS_TS_MEDIA        ***     /ud1104/PEBEV1/oradata/apps_ts_media17.dbf
+230  24000    APPS_TS_MEDIA        ***     /ud1104/PEBEV1/oradata/apps_ts_media18.dbf
+231  26624    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data132.dbf
+232  24344    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data133.dbf
+233  24344    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data134.dbf
+234  24344    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data135.dbf
+235  24944    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data136.dbf
+236  16384    APPS_UNDOTS1         ***     /ud1104/PEBEV1/oradata/apps_undots1_012.dbf
+237  16384    APPS_UNDOTS1         ***     /ud1104/PEBEV1/oradata/apps_undots1_013.dbf
+238  20480    APPS_UNDOTS1         ***     /ud1104/PEBEV1/oradata/apps_undots1_014.dbf
+239  2950     EMSC_INDEX           ***     /ud1104/PEBEV1/oradata/emsc_index07.dbf
+240  10240    XXEISD               ***     /ud1104/PEBEV1/oradata/xxeis_tab18.dbf
+241  2048     EMSCSUMM_IDX         ***     /ud1104/PEBEV1/oradata/emscsumm_idx08.dbf
+242  5120     EMSC_DATA            ***     /ud1104/PEBEV1/oradata/emsc_data16.dbf
+243  3900     LARGE_INDEX          ***     /ud1104/PEBEV1/oradata/large_index09.dbf
+244  9200     LARGE_DATA           ***     /ud1104/PEBEV1/oradata/large_data17.dbf
+245  22528    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data140.dbf
+246  20944    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data141.dbf
+247  20944    APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data142.dbf
+248  9000     APPS_TS_MEDIA        ***     /ud1104/PEBEV1/oradata/apps_ts_media19.dbf
+249  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx99.dbf
+250  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx100.dbf
+251  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx101.dbf
+252  30720    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx102.dbf
+253  1000     APPS_TS_SUMMARY      ***     /ud1104/PEBEV1/oradata/apps_ts_summary05.dbf
+254  25600    APPS_TS_TX_IDX       ***     /ud1104/PEBEV1/oradata/apps_ts_tx_idx103.dbf
+255  6144     APPS_TS_TX_DATA      ***     /ud1104/PEBEV1/oradata/apps_ts_tx_data143.dbf
+256  31000    APPS_TS_TX_IDX       ***     /ud1105/PEBEV1/oradata/apps_ts_tx_idx104.dbf
+257  30000    APPS_TS_TX_DATA      ***     /ud1105/PEBEV1/oradata/apps_ts_tx_data144.dbf
+258  30720    APPS_TS_MEDIA        ***     /ud1105/PEBEV1/oradata/apps_ts_media20.dbf
+259  30720    APPS_TS_TX_DATA      ***     /ud1105/PEBEV1/oradata/apps_ts_tx_data145.dbf
+260  30720    APPS_TS_TX_IDX       ***     /ud1105/PEBEV1/oradata/apps_ts_tx_idx105.dbf
+261  30720    APPS_TS_TX_IDX       ***     /ud1105/PEBEV1/oradata/apps_ts_tx_idx106.dbf
+262  30720    APPS_TS_TX_DATA      ***     /ud1105/PEBEV1/oradata/apps_ts_tx_data146.dbf
+263  30720    APPS_TS_TX_DATA      ***     /ud1105/PEBEV1/oradata/apps_ts_tx_data147.dbf
+264  19200    EMSC_DATA            ***     /ud1105/PEBEV1/oradata/emsc_data17.dbf
+265  30720    APPS_TS_MEDIA        ***     /ud1105/PEBEV1/oradata/apps_ts_media21.dbf
+266  3072     APPS_TS_SUMMARY      ***     /ud1105/PEBEV1/oradata/apps_ts_summary06.dbf
+267  164      BKPD                 ***     /ud1102/PEBEV1/oradata/bkpd01.dbf
+268  31653    XXEISD               ***     /ud1103/PEBEV1/oradata/xxeis_tab.dbf
+269  8589     XXEISX               ***     /ud1102/PEBEV1/oradata/xxeis_ind.dbf
+270  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data01.dbf
+271  8194     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data02.dbf
+272  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data03.dbf
+273  8194     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data04.dbf
+274  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data05.dbf
+275  8157     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data06.dbf
+276  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data07.dbf
+277  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data08.dbf
+278  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data09.dbf
+279  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data10.dbf
+280  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data11.dbf
+281  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data12.dbf
+282  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data13.dbf
+283  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data14.dbf
+284  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data15.dbf
+285  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data16.dbf
+286  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data17.dbf
+287  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data18.dbf
+288  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data19.dbf
+289  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data20.dbf
+290  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data21.dbf
+291  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data22.dbf
+292  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data23.dbf
+293  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data24.dbf
+294  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data25.dbf
+295  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data26.dbf
+296  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data27.dbf
+297  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data28.dbf
+298  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data29.dbf
+299  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data30.dbf
+300  8194     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data31.dbf
+301  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data32.dbf
+302  7170     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data33.dbf
+303  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data34.dbf
+304  7436     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data35.dbf
+305  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data36.dbf
+306  5188     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data37.dbf
+307  8194     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx01.dbf
+308  10240    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx02.dbf
+309  8192     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx03.dbf
+310  26624    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx04.dbf
+311  8192     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx05.dbf
+312  15360    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx06.dbf
+313  10240    APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx07.dbf
+314  10240    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx08.dbf
+315  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx09.dbf
+316  15360    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx10.dbf
+317  10240    APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx11.dbf
+318  10240    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx12.dbf
+319  10240    APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx13.dbf
+320  20480    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx14.dbf
+321  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx15.dbf
+322  20480    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx16.dbf
+323  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx17.dbf
+324  26624    APPS_TS_TX_IDX       ***     /ud1103/PEBEV1/oradata/apps_ts_tx_idx18.dbf
+325  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx19.dbf
+326  8194     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx20.dbf
+327  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx21.dbf
+328  8194     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx22.dbf
+329  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx23.dbf
+330  8194     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx24.dbf
+331  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx25.dbf
+332  12288    APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx26.dbf
+333  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx27.dbf
+334  8192     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx28.dbf
+335  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx29.dbf
+336  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx30.dbf
+337  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx31.dbf
+338  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx32.dbf
+339  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx33.dbf
+340  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx34.dbf
+341  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx35.dbf
+342  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx36.dbf
+343  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx37.dbf
+344  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx38.dbf
+345  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx39.dbf
+346  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx40.dbf
+347  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx41.dbf
+348  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx42.dbf
+349  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx43.dbf
+350  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx44.dbf
+351  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx45.dbf
+352  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx46.dbf
+353  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx47.dbf
+354  12288    APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx48.dbf
+355  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx49.dbf
+356  1702     APPS_TS_QUEUES       ***     /ud1102/PEBEV1/oradata/apps_ts_queues01.dbf
+357  736      APPS_TS_ARCHIVE      ***     /ud1101/PEBEV1/oradata/apps_ts_archive01.dbf
+358  2566     APPS_TS_NOLOGGING    ***     /ud1102/PEBEV1/oradata/apps_ts_nologging01.dbf
+359  4912     APPS_TS_INTERFACE    ***     /ud1101/PEBEV1/oradata/apps_ts_interface01.dbf
+360  7000     APPS_TS_INTERFACE    ***     /ud1102/PEBEV1/oradata/apps_ts_interface02.dbf
+361  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data43.dbf
+362  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data44.dbf
+363  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data45.dbf
+364  5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data46.dbf
+365  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data47.dbf
+366  5002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data48.dbf
+367  5069     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data49.dbf
+368  8002     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data50.dbf
+369  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data51.dbf
+370  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data52.dbf
+371  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data53.dbf
+372  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data54.dbf
+373  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data55.dbf
+374  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data56.dbf
+375  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data57.dbf
+376  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data58.dbf
+377  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data59.dbf
+378  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data60.dbf
+379  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data61.dbf
+380  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data62.dbf
+381  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data63.dbf
+382  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data64.dbf
+383  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data65.dbf
+384  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data66.dbf
+385  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data67.dbf
+386  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data68.dbf
+387  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data69.dbf
+388  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data70.dbf
+389  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data71.dbf
+390  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data72.dbf
+391  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data73.dbf
+392  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data74.dbf
+393  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data75.dbf
+394  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data76.dbf
+395  5002     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data77.dbf
+396  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data78.dbf
+397  8192     APPS_TS_TX_DATA      ***     /ud1101/PEBEV1/oradata/apps_ts_tx_data79.dbf
+398  8192     APPS_TS_TX_DATA      ***     /ud1102/PEBEV1/oradata/apps_ts_tx_data80.dbf
+399  5574     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media01.dbf
+400  7168     APPS_TS_MEDIA        ***     /ud1102/PEBEV1/oradata/apps_ts_media02.dbf
+401  5000     APPS_TS_MEDIA        ***     /ud1101/PEBEV1/oradata/apps_ts_media03.dbf
+402  101      APPS_TS_TOOLS        ***     /ud1102/PEBEV1/oradata/apps_ts_tools01.dbf
+403  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx50.dbf
+404  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx51.dbf
+405  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx52.dbf
+406  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx53.dbf
+407  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx54.dbf
+408  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx55.dbf
+409  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx56.dbf
+410  6402     APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx57.dbf
+411  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx58.dbf
+412  10240    APPS_TS_TX_IDX       ***     /ud1102/PEBEV1/oradata/apps_ts_tx_idx59.dbf
+413  5002     APPS_TS_TX_IDX       ***     /ud1101/PEBEV1/oradata/apps_ts_tx_idx60.dbf
+414  3869     APPS_TS_SEED         ***     /ud1102/PEBEV1/oradata/apps_ts_seed01.dbf
+415  5000     APPS_TS_SUMMARY      ***     /ud1101/PEBEV1/oradata/apps_ts_summary01.dbf
+416  500      EMSCSUMM_IDX         ***     /ud1105/PEBEV1/oradata/emscsumm_idx09.dbf
+417  7168     APPS_TS_TX_DATA      ***     /ud1105/PEBEV1/oradata/apps_ts_tx_data148.dbf
+418  1024     EMSC_INDEX           ***     /ud1105/PEBEV1/oradata/emsc_index08.dbf
+419  31744    APPS_TS_TX_IDX       ***     /ud1105/PEBEV1/oradata/apps_ts_tx_idx107.dbf
+420  30720    APPS_TS_TX_IDX       ***     /ud1105/PEBEV1/oradata/apps_ts_tx_idx108.dbf
+421  25600    XXEISD               ***     /ud1105/PEBEV1/oradata/xxeis_tab19.dbf
+422  15360    APPS_TS_MEDIA        ***     /ud1105/PEBEV1/oradata/apps_ts_media22.dbf
+423  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab20.dbf
+424  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab21.dbf
+425  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab22.dbf
+426  30720    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx109.dbf
+427  30720    APPS_TS_MEDIA        ***     /ud1106/PEBEV1/oradata/apps_ts_media23.dbf
+428  31744    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab23.dbf
+429  6500     LARGE_DATA           ***     /ud1104/PEBEV1/oradata/large_data18.dbf
+430  8000     LARGE_DATA           ***     /ud1106/PEBEV1/oradata/large_data19.dbf
+431  5120     LARGE_INDEX          ***     /ud1106/PEBEV1/oradata/large_index10.dbf
+432  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab24.dbf
+433  30720    APPS_TS_MEDIA        ***     /ud1106/PEBEV1/oradata/apps_ts_media24.dbf
+434  1700     APPS_TS_SUMMARY      ***     /ud1106/PEBEV1/oradata/apps_ts_summary07.dbf
+435  5120     EMSC_DATA            ***     /ud1106/PEBEV1/oradata/emsc_data18.dbf
+436  6144     XXEISX               ***     /ud1106/PEBEV1/oradata/xxeis_ind_04.dbf
+437  30720    APPS_TS_TX_DATA      ***     /ud1106/PEBEV1/oradata/apps_ts_tx_data149.dbf
+438  30720    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx110.dbf
+439  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab25.dbf
+440  31744    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab26.dbf
+441  30720    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab27.dbf
+442  30720    APPS_TS_TX_DATA      ***     /ud1106/PEBEV1/oradata/apps_ts_tx_data150.dbf
+443  30720    APPS_TS_TX_DATA      ***     /ud1106/PEBEV1/oradata/apps_ts_tx_data151.dbf
+444  30720    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx111.dbf
+445  30720    APPS_TS_MEDIA        ***     /ud1106/PEBEV1/oradata/apps_ts_media25.dbf
+446  1350     APPS_TS_INTERFACE    ***     /ud1106/PEBEV1/oradata/apps_ts_interface05.dbf
+447  31744    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx112.dbf
+448  25600    APPS_UNDOTS1         ***     /ud1106/PEBEV1/oradata/apps_undots1_015.dbf
+449  31744    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx113.dbf
+450  29696    APPS_TS_MEDIA        ***     /ud1106/PEBEV1/oradata/apps_ts_media26.dbf
+451  20480    APPS_UNDOTS1         ***     /ud1106/PEBEV1/oradata/apps_undots1_016.dbf
+452  21504    APPS_UNDOTS1         ***     /ud1106/PEBEV1/oradata/apps_undots1_017.dbf
+453  22528    APPS_TS_TX_DATA      ***     /ud1106/PEBEV1/oradata/apps_ts_tx_data152.dbf
+454  1024     SYSTEM               ***     /ud1106/PEBEV1/oradata/system12.dbf
+455  13000    APPS_TS_MEDIA        ***     /ud1106/PEBEV1/oradata/apps_ts_media27.dbf
+456  24576    APPS_TS_TX_IDX       ***     /ud1106/PEBEV1/oradata/apps_ts_tx_idx114.dbf
+457  31744    APPS_TS_TX_IDX       ***     /ud1107/PEBEV1/oradata/apps_ts_tx_idx115.dbf
+458  30720    APPS_TS_TX_DATA      ***     /ud1107/PEBEV1/oradata/apps_ts_tx_data153.dbf
+459  30720    APPS_TS_MEDIA        ***     /ud1107/PEBEV1/oradata/apps_ts_media28.dbf
+460  4500     APPS_TS_INTERFACE    ***     /ud1107/PEBEV1/oradata/apps_ts_interface06.dbf
+461  1500     APPS_TS_NOLOGGING    ***     /ud1107/PEBEV1/oradata/apps_ts_nologging03.dbf
+462  5000     APPS_TS_SUMMARY      ***     /ud1107/PEBEV1/oradata/apps_ts_summary08.dbf
+463  21504    EMSCSUMM_DATA        ***     /ud1107/PEBEV1/oradata/emscsumm_data12.dbf
+464  31744    EMSC_DATA            ***     /ud1107/PEBEV1/oradata/emsc_data19.dbf
+465  3000     EMSC_INDEX           ***     /ud1107/PEBEV1/oradata/emsc_index09.dbf
+466  31744    APPS_TS_TX_DATA      ***     /ud1107/PEBEV1/oradata/apps_ts_tx_data154.dbf
+467  18432    XXEISD               ***     /ud1106/PEBEV1/oradata/xxeis_tab28.dbf
+468  30720    APPS_TS_MEDIA        ***     /ud1107/PEBEV1/oradata/apps_ts_media29.dbf
+469  31744    APPS_TS_TX_IDX       ***     /ud1107/PEBEV1/oradata/apps_ts_tx_idx116.dbf
+470  7168     XXEISD               ***     /ud1107/PEBEV1/oradata/xxeis_tab29.dbf
+471  2048     XXEISX               ***     /ud1107/PEBEV1/oradata/xxeis_ind_05.dbf
+472  31744    APPS_TS_TX_IDX       ***     /ud1107/PEBEV1/oradata/apps_ts_tx_idx117.dbf
+473  30720    APPS_TS_TX_DATA      ***     /ud1107/PEBEV1/oradata/apps_ts_tx_data155.dbf
+474  9216     EMSCSUMM_IDX         ***     /ud1107/PEBEV1/oradata/emscsumm_idx10.dbf
+475  30720    APPS_TS_MEDIA        ***     /ud1107/PEBEV1/oradata/apps_ts_media30.dbf
+476  31744    APPS_TS_TX_IDX       ***     /ud1107/PEBEV1/oradata/apps_ts_tx_idx118.dbf
+477  28672    APPS_TS_TX_DATA      ***     /ud1107/PEBEV1/oradata/apps_ts_tx_data156.dbf
+478  5120     EMSC_DATA            ***     /ud1107/PEBEV1/oradata/emsc_data20.dbf
+479  10240    APPS_TS_TX_IDX       ***     /ud1107/PEBEV1/oradata/apps_ts_tx_idx119.dbf
+
+List of Temporary Files
+=======================
+File Size(MB) Tablespace           Maxsize(MB) Tempfile Name
+---- -------- -------------------- ----------- --------------------
+1    20000    TEMP1                20000       /ut1102/PEBEV1/oradata/temp1_60.dbf
+2    20000    TEMP1                20000       /ut1102/PEBEV1/oradata/temp1_61.dbf
+3    20000    TEMP1                20000       /ut1102/PEBEV1/oradata/temp1_62.dbf
+4    20000    TEMP2                20000       /ut1102/PEBEV1/oradata/temp2_33.dbf
+5    20000    TEMP2                20000       /ut1102/PEBEV1/oradata/temp2_34.dbf
+6    20000    TEMP2                20000       /ut1102/PEBEV1/oradata/temp2_35.dbf
+7    20480    TEMP2                20480       /ut1102/PEBEV1/oradata/temp2_36.dbf
+8    20480    TEMP1                20480       /ut1102/PEBEV1/oradata/temp1_63.dbf
+9    10240    TEMP2                10240       /ut1102/PEBEV1/oradata/temp2_37.dbf
+10   10240    TEMP2                10240       /ut1102/PEBEV1/oradata/temp2_38.dbf
+11   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp21.dbf
+12   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp23.dbf
+13   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp25.dbf
+14   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp27.dbf
+15   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp29.dbf
+16   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp31.dbf
+17   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp33.dbf
+18   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp35.dbf
+19   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp37.dbf
+20   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp39.dbf
+21   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp41.dbf
+22   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp43.dbf
+23   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp45.dbf
+24   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp47.dbf
+25   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp49.dbf
+26   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp51.dbf
+27   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp53.dbf
+28   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp55.dbf
+29   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp57.dbf
+30   4000     TEMP1                4096        /ut1101/PEBEV1/oradata/temp59.dbf
+31   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp02.dbf
+32   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp04.dbf
+33   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp06.dbf
+34   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp08.dbf
+35   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp10.dbf
+36   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp12.dbf
+37   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp14.dbf
+38   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp16.dbf
+39   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp18.dbf
+40   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp20.dbf
+41   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp22.dbf
+42   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp24.dbf
+43   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp26.dbf
+44   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp28.dbf
+45   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp30.dbf
+46   4000     TEMP2                4096        /ut1101/PEBEV1/oradata/temp32.dbf
+47   4000     TEMP2                4000        /ut1101/PEBEV1/oradata/temp40.dbf
+48   4000     TEMP2                4000        /ut1101/PEBEV1/oradata/temp50.dbf
+49   4000     TEMP2                4000        /ut1101/PEBEV1/oradata/temp52.dbf
+50   4000     TEMP2                4000        /ut1101/PEBEV1/oradata/temp54.dbf
+51   30720    TEMP2                30720       /ut1102/PEBEV1/oradata/temp2_39.dbf
+52   30720    TEMP2                30720       /ut1102/PEBEV1/oradata/temp2_40.dbf
+53   30720    TEMP2                30720       /ut1102/PEBEV1/oradata/temp2_41.dbf
+54   30720    TEMP2                30720       /ut1102/PEBEV1/oradata/temp2_42.dbf
+55   3000     TEMP1                3000        /ut1102/PEBEV1/oradata/temp1_64.dbf
+61   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp01.dbf
+62   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp02.dbf
+63   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp03.dbf
+64   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp04.dbf
+65   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp05.dbf
+66   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp06.dbf
+67   6000     EMSCTEMP             6000        /ut1101/PEBEV1/oradata/emsctemp07.dbf
+
+RMAN> exit
+
+
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ pwd
+/ud1107/incr_scn_18Sep18
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ rman target /
+
+Recovery Manager: Release 12.1.0.2.0 - Production on Tue Jan 1 04:02:35 2019
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: PEBEV1 (DBID=4098554771, not open)
+
+RMAN> catalog start with '/ud1107/incr_scn_18Sep18';
+
+using target database control file instead of recovery catalog
+searching for all files that match the pattern /ud1107/incr_scn_18Sep18
+
+List of Files Unknown to the Database
+=====================================
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218343.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218353.bkp
+File Name: /ud1107/incr_scn_18Sep18/ForStandbyCTRL.bck
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218313.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218325.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218326.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218334.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218314.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218349.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218301.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218335.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218316.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218330.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218345.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218299.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218351.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218342.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218315.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218340.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218346.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218339.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218310.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218305.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218329.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218302.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218321.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218337.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218311.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218307.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218336.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218341.bkp
+File Name: /ud1107/incr_scn_18Sep18/nohup.out
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218306.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218348.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218344.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218323.bkp
+File Name: /ud1107/incr_scn_18Sep18/reco.sh
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218309.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218328.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218331.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218327.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218318.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218300.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218322.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218317.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218352.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218324.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218347.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218350.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218319.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218312.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218338.bkp
+
+Do you really want to catalog the above files (enter YES or NO)? yes
+cataloging files...
+cataloging done
+
+List of Cataloged Files
+=======================
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218343.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218353.bkp
+File Name: /ud1107/incr_scn_18Sep18/ForStandbyCTRL.bck
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218313.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218325.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218326.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218334.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218314.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218349.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218301.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218335.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218316.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218330.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218345.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218299.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218351.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218342.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218315.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218340.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218346.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218339.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218310.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218305.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218329.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218302.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218321.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218337.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218311.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218307.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218336.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218341.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218306.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218348.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218344.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218323.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218309.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218328.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218331.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218327.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218318.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218300.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218322.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218317.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218352.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218324.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218347.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218350.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218319.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218312.bkp
+File Name: /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218338.bkp
+
+List of Files Which Were Not Cataloged
+=======================================
+File Name: /ud1107/incr_scn_18Sep18/nohup.out
+  RMAN-07517: Reason: The file header is corrupted
+File Name: /ud1107/incr_scn_18Sep18/reco.sh
+  RMAN-07517: Reason: The file header is corrupted
+
+
+
+RMAN>
+RMAN>
+RMAN> exit
+
+
+Recovery Manager complete.
+
+
+============================================================================
+
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ more reco.sh
+export NLS_DATE_FORMAT='DD-MON-YYYY HH24:MI'
+rman target / log=recover_standby.log << EOF
+RUN
+{
+ALLOCATE CHANNEL CH1 DEVICE TYPE DISK;
+ALLOCATE CHANNEL CH2 DEVICE TYPE DISK;
+ALLOCATE CHANNEL CH3 DEVICE TYPE DISK;
+ALLOCATE CHANNEL CH4 DEVICE TYPE DISK;
+ALLOCATE CHANNEL CH5 DEVICE TYPE DISK;
+ALLOCATE CHANNEL CH6 DEVICE TYPE DISK;
+recover database noredo;
+}
+EOF
+
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ nohup sh reco.sh &
+[1] 17774
+
+
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ tail -f recover_standby.log
+allocated channel: CH4
+channel CH4: SID=1881 device type=DISK
+
+allocated channel: CH5
+channel CH5: SID=2256 device type=DISK
+
+allocated channel: CH6
+channel CH6: SID=2631 device type=DISK
+
+Starting recover at 01-JAN-2019 04:03
+channel CH1: starting incremental datafile backup set restore
+channel CH1: specifying datafile(s) to restore from backup set
+destination for restore of datafile 00005: /ud1102/PEBEV1/oradata/system05.dbf
+destination for restore of datafile 00055: /ud1101/PEBEV1/oradata/apps_ts_media04.dbf
+destination for restore of datafile 00075: /ud1102/PEBEV1/oradata/apps_ts_tx_data93.dbf
+destination for restore of datafile 00085: /ud1102/PEBEV1/oradata/xxeis_ind_02.dbf
+destination for restore of datafile 00103: /ud1101/PEBEV1/oradata/emsc_data11.dbf
+destination for restore of datafile 00138: /ud1101/PEBEV1/oradata/emscsumm_data05.dbf
+destination for restore of datafile 00198: /ud1103/PEBEV1/oradata/apps_ts_media13.dbf
+destination for restore of datafile 00243: /ud1104/PEBEV1/oradata/large_index09.dbf
+destination for restore of datafile 00429: /ud1104/PEBEV1/oradata/large_data18.dbf
+destination for restore of datafile 00431: /ud1106/PEBEV1/oradata/large_index10.dbf
+destination for restore of datafile 00435: /ud1106/PEBEV1/oradata/emsc_data18.dbf
+channel CH1: reading from backup piece /ud1107/incr_scn_18Sep18/incr_rman_PEBEV1_12312018_1_218343.bkp
+channel CH2: starting incremental datafile backup set restore
+
+
+
+
+
+SQL> select name,open_mode,database_role from v$database;
+
+NAME      OPEN_MODE            DATABASE_ROLE
+--------- -------------------- ----------------
+PEBEV1    MOUNTED              PHYSICAL STANDBY
+
+SQL> shut immediate;
+ORA-01109: database not open
+
+
+Database dismounted.
+ORACLE instance shut down.
+SQL> startup nomount;
+ORA-32004: obsolete or deprecated parameter(s) specified for RDBMS instance
+ORACLE instance started.
+
+Total System Global Area 3.5501E+10 bytes
+Fixed Size                  5305016 bytes
+Variable Size            8522829128 bytes
+Database Buffers         2.6911E+10 bytes
+Redo Buffers               61800448 bytes
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+You have new mail in /var/spool/mail/orapeb1
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ rman target /
+
+Recovery Manager: Release 12.1.0.2.0 - Production on Tue Jan 1 05:05:31 2019
+
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: PEBEV1 (not mounted)
+
+RMAN> restore standby controlfile from '/ud1107/incr_scn_18Sep18/ForStandbyCTRL.bck';
+
+Starting restore at 01-JAN-19
+using target database control file instead of recovery catalog
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: SID=4127 device type=DISK
+
+channel ORA_DISK_1: restoring control file
+channel ORA_DISK_1: restore complete, elapsed time: 00:00:01
+output file name=/un1101/PEBEV1/oradata/control01.ctl
+output file name=/un1102/PEBEV1/oradata/control02.ctl
+Finished restore at 01-JAN-19
+
+RMAN> shutdown immediate;
+
+Oracle instance shut down
+
+RMAN> startup mount;
+
+connected to target database (not started)
+Oracle instance started
+database mounted
+
+Total System Global Area   35500589056 bytes
+
+Fixed Size                     5305016 bytes
+Variable Size               8522829128 bytes
+Database Buffers           26910654464 bytes
+Redo Buffers                  61800448 bytes
+
+RMAN> report schema;
+
+Starting implicit crosscheck backup at 01-JAN-19
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: SID=754 device type=DISK
+allocated channel: ORA_DISK_2
+channel ORA_DISK_2: SID=1129 device type=DISK
+allocated channel: ORA_DISK_3
+channel ORA_DISK_3: SID=1504 device type=DISK
+allocated channel: ORA_DISK_4
+channel ORA_DISK_4: SID=1879 device type=DISK
+Crosschecked 14 objects
+Crosschecked 16 objects
+Crosschecked 17 objects
+Crosschecked 16 objects
+Finished implicit crosscheck backup at 01-JAN-19
+
+Starting implicit crosscheck copy at 01-JAN-19
+using channel ORA_DISK_1
+using channel ORA_DISK_2
+using channel ORA_DISK_3
+using channel ORA_DISK_4
+Crosschecked 2 objects
+Crosschecked 3 objects
+Crosschecked 1 objects
+Crosschecked 2 objects
+Finished implicit crosscheck copy at 01-JAN-19
+
+searching for all files in the recovery area
+cataloging files...
+cataloging done
+
+List of Cataloged Files
+=======================
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_09_25/o1_mf_n_987580591_ftngkf4x_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_10_26/o1_mf_n_990499639_fx5s2kvz_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_10_30/o1_mf_n_990906563_fxl5lh8x_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_10_30/o1_mf_n_990834681_fxj7fc08_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_12_23/o1_mf_n_995557420_g1yz9lk1_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_10_08/o1_mf_n_988948068_fvpd1moz_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_10_29/o1_mf_n_990787402_fxggd7qy_.bkp
+File Name: /ur1101/PEBEV1/archive/PEBEV1_DR/autobackup/2018_12_25/o1_mf_n_995831017_g25vh58f_.bkp
+
+RMAN-06139: WARNING: control file is not current for REPORT SCHEMA
+Report of database schema for database with db_unique_name PEBEV1_DR
+
+
+
+RMAN> list incarnation;
+
+
+List of Database Incarnations
+DB Key  Inc Key DB Name  DB ID            STATUS  Reset SCN  Reset Time
+------- ------- -------- ---------------- --- ---------- ----------
+3       3       PEBEV1   4098554771       ORPHAN  21576819198 05-FEB-14
+1       1       PEBEV1   4098554771       PARENT  21775946430 21-FEB-14
+2       2       PEBEV1   4098554771       CURRENT 21775950867 21-FEB-14
+
+
+
+[PEBEV1 orapeb1@evhc-365-pdb01 incr_scn_18Sep18]$ sqlplus / as sysdba
+
+SQL*Plus: Release 12.1.0.2.0 Production on Tue Jan 1 05:10:11 2019
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+
+Database altered.
+
+SQL>  ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
+
+Database altered.
+
+SQL> !ps -ef |grep mrp
+orapeb1  24498 23925  0 05:16 pts/60   00:00:00 /bin/bash -c ps -ef |grep mrp
+orapeb1  24500 24498  0 05:16 pts/60   00:00:00 grep mrp
+
+SQL> ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+
+Database altered.
+
+SQL> exit
+
+
+select name, thread#, sequence#, status, first_time, next_time, first_change#, next_change# from v$archived_log where 51358488884 between first_change# and next_change#;
+
+
+select name, thread#, sequence#, status, first_time, next_time, first_change#, next_change# from v$archived_log where 51359623408 between first_change# and next_change#; 
+
+==================================================================================================================
+col CURRENT_SCN for 9999999999999999999999999999
+col CHECKPOINT_CHANGE# for 9999999999999999999999999999999
+select current_scn from v$database;
+select min(fhscn) current_scn from x$kcvfh;
+select min(checkpoint_change#) from v$datafile_header;
+select min(f.fhscn) from x$kcvfh f, v$datafile d where f.hxfil =d.file# and d.enabled != 'READ ONLY';
+Check the number and creation date of datafiles on the STANDBY:
+select count(1), max(file#), to_char(max(creation_time),'dd-Mon-yyyy hh24mi') from v$datafile;
+Run the same query on the primary database, and compare the two.
+
+rman target / <<EOF >>/ud1107/scn_bkp_250819/incr_250819.log
+run 
+{
+allocate channel t1 device type disk;
+allocate channel t2 device type disk;
+allocate channel t3 device type disk;
+allocate channel t4 device type disk;
+allocate channel t5 device type disk;
+allocate channel t6 device type disk;
+allocate channel t7 device type disk;
+allocate channel t8 device type disk;
+BACKUP as compressed backupset INCREMENTAL FROM SCN 52591960454 DATABASE FORMAT '/ud1107/scn_bkp_250819/%d_%s_DBF.rman';
+Backup current controlfile for standby format '/ud1107/scn_bkp_250819/%d_%S.ctl';
+}
+------------->
+select n
+

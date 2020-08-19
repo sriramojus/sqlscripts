@@ -1,0 +1,25 @@
+Taking backup of existing Package
+========================================
+
+set pagesize 0
+set linesize 800
+set trimspool on
+set heading off
+set feedback off
+spool XXEVHC_ORACLE_ICIMS_INT_PKG_june25_pks.sql
+select text from dba_source where name='XXEVHC_ORACLE_ICIMS_INT_PKG' and type='PACKAGE' and OWNER='APPS';
+
+
+=======================================================
+
+Taking backup of existing Package Body
+
+===========================================
+
+set pagesize 0
+set linesize 800
+set trimspool on
+set heading off
+set feedback off
+spool XXEVHC_ORACLE_ICIMS_INT_PKG_june25_pkb.sql
+select text from dba_source where name='XXEVHC_ORACLE_ICIMS_INT_PKG' and type='PACKAGE BODY' and OWNER='APPS';

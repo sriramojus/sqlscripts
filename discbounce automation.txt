@@ -1,0 +1,37 @@
+echo "############################"
+echo "# All Discoverer Services are STOPPING #"
+echo "############################"
+
+echo "#Exporting Path#"
+
+export MIDDLEWARE_HOME=/us1002/MWHome
+export ORACLE_HOME=/us1002/MWHome/as_1
+export ORACLE_INSTANCE=/us1002/MWHome/asinst_1
+export DOMAIN_HOME= /us1002/MWHome/user_projects/domains/Discoverer11g/bin
+PATH=$PATH:$HOME/bin:/us1002/MWHome:/us1001/MWHome/as_1:/us1002/MWHome/as_1/bin:/us1002/MWHome/asinst_1
+export PATH
+. /us1002/MWHome/asinst_1/Discoverer/Discoverer_Disc_Inst_1/util/discenv.sh
+
+
+echo "############################"
+echo "#Stopping Services#"
+echo "############################"
+
+$ORACLE_INSTANCE/bin/opmnctl stopall 
+nohup  sh $DOMAIN_HOME/bin/stopManagedWebLogic.sh WLS_DISCO > StopManagedweb.out &
+nohup  sh $DOMAIN_HOME/bin/stopWebLogic.sh > stopWebLogic.out &
+
+ps -ef | grep nodemanager
+
+kill -9 nodemanager pid
+
+echo "############################"
+echo "#Starting Services#"
+echo "############################"
+
+
+nohup sh $WL_HOME/server/bin/startNodeManager.sh  > startNodeManager.out &
+nohup sh $DOMAIN_HOME/bin/startWebLogic.sh > startWebLogic.out &
+nohup sh $DOMAIN_HOME/bin/./startManagedWebLogic.sh WLS_DISCO > startManagedWebLogic.out &
+
+$ORACLE_INSTANCE/bin/opmnctl startall

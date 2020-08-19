@@ -1,0 +1,23 @@
+find . -name "forms_server1.*" -size +100000 -exec ls -ltr {} \; - list files that are of big size
+
+find . -name "*.trc" -size +100000 -exec lsof {} \; - find files that are currently being used
+
+if nothing is being used, then we can zip them 
+
+find . -name "*.req" -size +100000 -exec gzip --fast {} \; &
+find . -name "*.trc" -mmin +600 -exec gzip --fast {} \; & 
+
+
+find . -name "forms_server1.*" -mtime +20 -exec rm -f {} \; &
+
+find . -name "*.log" -mtime +30 -exec gzip {} \; &
+
+find . -name "*.txt" -mtime +5 -exec rm -rf {} \; &
+
+find . -name "*.req" -mtime +3 -exec rm -rf {} \; &
+
+find . -name "*.aud" -mtime +1 -exec gzip {} \; &
+
+
+
+

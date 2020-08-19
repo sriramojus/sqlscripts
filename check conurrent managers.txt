@@ -1,0 +1,89 @@
+select decode(CONCURRENT_QUEUE_NAME,'FNDICM','Internal Manager','FNDCRM','Conflict Resolution Manager','AMSDMIN','Marketing Data Mining Manager','C_AQCT_SVC','C AQCART Service','FFTM','FastFormula Transaction Manager','FNDCPOPP','Output Post Processor','FNDSCH','Scheduler/Prereleaser Manager','FNDSM_AQHERP','Service Manager: AQHERP','FTE_TXN_MANAGER','Transportation Manager','IEU_SH_CS','Session History Cleanup','IEU_WL_CS','UWQ Worklist Items Release for Crashed session','INVMGR','Inventory Manager','INVTMRPM','INV Remote Procedure Manager','OAMCOLMGR','OAM Metrics Collection Manager','PASMGR','PA Streamline Manager','PODAMGR','PO Document Approval Manager','RCVOLTM','Receiving Transaction Manager','STANDARD','Standard Manager','WFALSNRSVC','Workflow Agent Listener Service','WFMLRSVC','Workflow Mailer Service','WFWSSVC','Workflow Document Web Services Service','WMSTAMGR','WMS Task Archiving Manager','XDP_APPL_SVC','SFM Application Monitoring Service','XDP_CTRL_SVC','SFM Controller Service','XDP_Q_EVENT_SVC','SFM Event Manager Queue Service','XDP_Q_FA_SVC','SFM Fulfillment Actions Queue Service','XDP_Q_FE_READY_SVC','SFM Fulfillment Element Ready Queue Service','XDP_Q_IN_MSG_SVC','SFM Inbound Messages Queue Service','XDP_Q_ORDER_SVC','SFM Order Queue Service','XDP_Q_TIMER_SVC','SFM Timer Queue Service','XDP_Q_WI_SVC','SFM Work Item Queue Service','XDP_SMIT_SVC','SFM SM Interface Test Service') as "Concurrent Manager's Name", max_processes as "TARGET Processes", running_processes as "ACTUAL Processes" from apps.fnd_concurrent_queues where CONCURRENT_QUEUE_NAME in ('FNDICM','FNDCRM','AMSDMIN','C_AQCT_SVC','FFTM','FNDCPOPP','FNDSCH','FNDSM_AQHERP','FTE_TXN_MANAGER','IEU_SH_CS','IEU_WL_CS','INVMGR','INVTMRPM','OAMCOLMGR','PASMGR','PODAMGR','RCVOLTM','STANDARD','WFALSNRSVC','WFMLRSVC','WFWSSVC','WMSTAMGR','XDP_APPL_SVC','XDP_CTRL_SVC','XDP_Q_EVENT_SVC','XDP_Q_FA_SVC','XDP_Q_FE_READY_SVC','XDP_Q_IN_MSG_SVC','XDP_Q_ORDER_SVC','XDP_Q_TIMER_SVC','XDP_Q_WI_SVC','XDP_SMIT_SVC');
+
+=================================
+Submit activer users from backend
+======================================
+
+CONCSUB apps/Ur3aP1sebs SYSADMIN 'System Administrator' SYSADMIN WAIT=N CONCURRENT FND FNDSCURS
+
+select count(*) from apps.wf_notifications where status='OPEN' and mail_status='MAIL';
+
+===============
+jobs on hold
+=============
+
+update fnd_concurrent_requests set hold_flag = 'N' where hold_flag = 'Y' and request_id
+not in (select request_id from jobs_already_on_hold);
+
+===========================
+Concurrent Manager Queue
+==========================
+
+set verify off
+set lines 256
+set trims ON
+set pages 60
+col concurrent_queue_id format 99999 heading "QUEUE Id"
+col concurrent_queue_name format a20 trunc heading "QUEUE Code"
+col user_concurrent_queue_name format a30 trunc heading "Concurrent Queue Name"
+col max_processes format 999 heading "Max"
+col running_processes format 999 heading "Act"
+col running format 999 heading "Run"
+col target_node format a15 heading "Node"
+col status format a12 trunc heading "Status"
+col run format 9999 heading 'Run'
+col pend format 9999 heading 'Pending'
+col cmgr_program FOR a65;
+SELECT 'Instance : '
+||NAME instance_name
+FROM v$database;
+Prompt ===========================
+Prompt concurrent manager status
+Prompt ===========================
+SELECT q.concurrent_queue_id,
+q.concurrent_queue_name,
+q.user_concurrent_queue_name,
+q.target_node,
+q.max_processes,
+q.running_processes,
+running.run running,
+pending.pend,
+Decode(q.control_code, 'D', 'Deactivating',
+'E', 'Deactivated',
+'N', 'Node unavai',
+'A', 'Activating',
+'X', 'Terminated',
+'T', 'Terminating',
+'V', 'Verifying',
+'O', 'Suspending',
+'P', 'Suspended',
+'Q', 'Resuming',
+'R', 'Restarting') status
+FROM (SELECT concurrent_queue_name,
+COUNT(phase_code) run
+FROM fnd_concurrent_worker_requests
+WHERE phase_code = 'R'
+AND hold_flag != 'Y'
+AND requested_start_date <= SYSDATE GROUP BY concurrent_queue_name) running, (SELECT concurrent_queue_name, COUNT(phase_code) pend FROM fnd_concurrent_worker_requests WHERE phase_code = 'P' AND hold_flag != 'Y' AND requested_start_date <= SYSDATE GROUP BY concurrent_queue_name) pending, apps.fnd_concurrent_queues_vl q WHERE q.concurrent_queue_name = running.concurrent_queue_name(+) AND q.concurrent_queue_name = pending.concurrent_queue_name(+) AND q.enabled_flag = 'Y' ORDER BY Decode(q.application_id, 0, Decode(q.concurrent_queue_id, 1, 1,4, 2)), Sign(q.max_processes) DESC, q.concurrent_queue_name, q.application_id;
+
+=======================================
+report Failed Concurrent Programs- 
+======================================
+
+SELECT fcr.request_id,
+         fu.user_name,
+         fcp.user_concurrent_program_name,
+         TO_CHAR (fcr.actual_start_date, 'DD-MON-YYYY HH24:MI:SS') actual_start_date,
+         TO_CHAR (fcr.actual_completion_date, 'DD-MON-YYYY HH24:MI:SS') actual_completion_date
+    FROM apps.fnd_concurrent_requests fcr,
+         apps.fnd_concurrent_programs_tl fcp,
+         apps.fnd_user fu
+   WHERE     fcr.program_application_id = fcp.application_id
+         AND fcr.concurrent_program_id = fcp.concurrent_program_id
+         AND fcr.requested_by = fu.user_id
+         AND fcr.phase_code = 'C'
+         AND fcr.status_code = 'E'
+         AND fcr.actual_completion_date > to_date('&Enter_Date','DD-MON-YYYY')
+         AND fcp.user_concurrent_program_name NOT IN
+                ('Request Set Stage', 'Report Set') 
+ORDER BY fcr.actual_start_date;

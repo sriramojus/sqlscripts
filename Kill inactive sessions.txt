@@ -1,0 +1,7 @@
+
+select 'alter system kill session ' || '''' || sid || ',' || serial# || '''' || ' immediate;' from  v$session where status='INACTIVE' and last_call_et>3600*1  and module like 'e:SYSADMIN:fwk:fnd.wf.worklist.server.WorklistAM';
+
+
+
+
+select 'alter system kill session '''|| sid||','||serial#||''';' from gv$session where status='INACTIVE'  and module like '%fnd.wf.worklist%';

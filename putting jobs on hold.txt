@@ -1,0 +1,46 @@
+Dropping old table:
+
+drop table jobs_already_on_hold;
+
+
+CHecking conc requests already on hold
+select request_id, phase_code, status_code from fnd_concurrent_requests where hold_flag = 'Y';
+
+
+creating table for already hold request
+create table jobs_already_on_hold as (select request_id, phase_code, status_code from fnd_concurrent_requests where hold_flag = 'Y');
+
+
+Holding concurrent requests
+update fnd_concurrent_requests set hold_flag = 'Y'  where phase_code ='P' and hold_flag ='N';
+
+Releasing conc requests
+update fnd_concurrent_requests set hold_flag = 'N' where hold_flag = 'Y' and request_id not in (select request_id from jobs_already_on_hold);
+
+
+1.    Connect as apps user, Drop old table (jobs_already_on_hold)
+
+                      SQL> drop table jobs_already_on_hold;
+
+2.     List out the Jobs which were already on HOLD
+
+   SQL> select count (*) from fnd_concurrent_requests where hold_flag='Y';
+
+3.    Create backup of the table with the jobs which were already ON HOLD.
+
+SQL> create table jobs_already_on_hold as (select request_id, phase_code, status_code from fnd_concurrent_requests where hold_flag = 'Y');
+
+4.    Now, Place the pending jobs on HOLD using the below update command.
+
+SQL> update fnd_concurrent_requests
+
+ set hold_flag = 'Y'
+
+ where phase_code = 'P'
+
+ and hold_flag = 'N';
+
+commit;
+
+update fnd_concurrent_requests set hold_flag ='N' where hold_flag ='Y' and request_id
+not in (select request_id from jobs_already_on_hold);

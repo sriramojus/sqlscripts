@@ -1,0 +1,10 @@
+increase java double the heap size until this test goes..
+
+
+select DEVELOPER_PARAMETERS from FND_CP_SERVICES
+where SERVICE_ID = (select MANAGER_TYPE from FND_CONCURRENT_QUEUES where CONCURRENT_QUEUE_NAME = 'FNDCPOPP');
+
+
+update FND_CP_SERVICES
+set DEVELOPER_PARAMETERS =
+'J:oracle.apps.fnd.cp.gsf.GSMServiceController:-mx4096m' where SERVICE_ID = (select MANAGER_TYPE from FND_CONCURRENT_QUEUES where CONCURRENT_QUEUE_NAME = 'FNDCPOPP');

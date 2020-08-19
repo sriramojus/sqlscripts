@@ -1,0 +1,90 @@
+=========================================
+tablespace
+
+tablespace usage:-
+
+set lines 200
+select a.tbl "Name",a.tsz "Total Size",b.fsz "Free Space",
+    round((1-(b.fsz/a.tsz))*100) "Pct Used",round((b.fsz/a.tsz)*100) "Pct Free" from
+       (select tablespace_name tbl,sum(bytes)/1024/1024 TSZ from dba_data_files
+       where tablespace_name like '%&1%' group by tablespace_name) a,
+       (select tablespace_name tblsp,sum(bytes)/1024/1024 FSZ from dba_free_space
+        where tablespace_name like '%&1%' group by tablespace_name) b
+        Where a.tbl=b.tblsp;
+		
+		
+		set lines 200
+		select TABLESPACE_NAME,FILE_NAME,bytes/1024/1024,maxbytes/1024/1024,STATUS,AUTOEXTENSIBLE from dba_data_files where TABLESPACE_NAME='XXBI_NTXCHTRKD';
+		
+		set lines 200
+		select TABLESPACE_NAME,FILE_NAME,bytes/1024/1024,maxbytes/1024/1024,STATUS,AUTOEXTENSIBLE from dba_data_files where FILE_NAME like'%XXBI_NTXCHTRKD17.dbf%';
+=======================================================================================================
+  
+Datafiles of Tablespace:
+--------------------------------------------------------------------------------------- 
+col FILE_NAME for a50;
+set lines 200;
+select 
+TABLESPACE_NAME,FILE_NAME,bytes/1024/1024,maxbytes/1024/1024,STATUS,AUTOEXTENSIBLE 
+from dba_data_files where TABLESPACE_NAME like '%&1%' order by file_name;
+
+alter database datafile '/GRPROD/oradata/data/users_01.dbf' resize 2G;
+
+To add a datafile to normal datamount: 
+alter tablespace LOB1 add datafile '+OTMPROD_DATA/' size 6G autoextend on;
+
+To add a datafile to ASM DISKGROUP:
+alter tablespace APPS_TS_TX_DATA add datafile '/ud1113/PEBCL1/oradata/a_txn_data94.dbf' size 2G;
+
+
+
+
+Sridh@r123$5
+
+
+
+==================================================
+To Check ASM DISKGROUP SIZE
+set pages 40000 lines 120
+col NAME for a15
+select name, TOTAL_MB, FREE_MB, round(TOTAL_MB-FREE_MB) USED_MB , trunc(((TOTAL_MB-FREE_MB)/TOTAL_MB)*100) USED_PCT from v$asm_diskgroup;
+
+To Check which diskgroups are in autoextensible mode
+SELECT count(*) from dba_data_files where autoextensible='YES';
+========================================================================
+
+alter database datafile '+OTMPROD_DATA/OTMPROD/DATAFILE/lob1.469.1006787693' resize 12G;
+
+=====================================================
+select name, path from v$asm_disk order by 1 
+====================================================
+
+SELECT SEGMENT_NAME ,OWNER,TABLESPACE_NAME FROM DBA_SEGMENTS WHERE SEGMENT_NAME LIKE '%SYSSMU143%';
+
+====================================================
+
+CHOBANI TABLESPACE ALERT
+
+set ORACLE_HOME=D:\app\OracleHomePRD\product\12.1.0\dbhome_1
+
+set ORACLE_HOME=C:\app\ORAHOMEDEV\product\12.1.0\dbhome_2
+
+
+set ORACLE_SID=JDADEV01
+=========================================================
+
+select t1.tablespace_name,(nvl(t1.Total_size_mb1,0)+nvl(t1.Total_size_mb2,0)+nvl(t1.Total_size_mb3,0)) as tot_size_mb,
+(nvl(t1.free_space_mb1,0) + nvl(t2.free_space_mb2,0)) free_size_mb,round(((nvl(t1.free_space_mb1,0) + nvl(t2.free_space_mb2,0))/(nvl(t1.Total_size_mb1,0)
++nvl(t1.Total_size_mb2,0) +nvl(t1.Total_size_mb3,0)))*100)as perecnt_free
+from ( select tablespace_name, round(sum((case when autoextensible='YES' and bytes<=maxbytes then maxbytes else 0 end)/1048576)) as Total_size_mb1,
+round(sum((case when autoextensible='YES' and bytes>maxbytes then bytes else 0 end)/1048576)) as Total_size_mb2,
+round(sum((case when autoextensible='NO' then bytes else 0 end)/1048576)) as Total_size_mb3,
+round(sum((case when autoextensible='YES' and bytes<maxbytes then maxbytes-bytes else 0 end)/1048576)) as free_space_mb1
+from dba_data_files group by tablespace_name )t1, ( select tablespace_name,round(sum(bytes)/1048576) free_space_mb2 from dba_free_space
+group by tablespace_name )t2 where t1.tablespace_name=t2.tablespace_name(+) and
+round(((nvl(t1.free_space_mb1,0) + nvl(t2.free_space_mb2,0))/(nvl(t1.Total_size_mb1,0)+nvl(t1.Total_size_mb2,0) +nvl(t1.Total_size_mb3,0)))*100)<= 90 and 
+(nvl(t1.free_space_mb1,0) + nvl(t2.free_space_mb2,0))<= 20000 and t1.tablespace_name in(select tablespace_name from dba_tablespaces 
+where contents='PERMANENT' and status='ONLINE');
+
+
+

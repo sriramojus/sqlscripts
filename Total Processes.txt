@@ -1,0 +1,22 @@
+To check count on servers
+
+ps -ef |grep oradev4| wc -l
+
+================================
+select * from v$resource_limit;
+================================
+
+select 'alter system kill session '''|| sid||','||serial#||''';' from gv$session where status='INACTIVE' and last_call_et>3600*1 and EVENT='SQL*Net message from client' and PROGRAM like 'frmweb%';
+
+select ''|| sid||','||serial#||''';' from gv$session where status='INACTIVE' and module like '%frmweb%';
+
+
+========================================================================================================================	
+	
+select resource_name, current_utilization, max_utilization, limit_value from v$resource_limit where resource_name in ('processes','sessions');
+	
+select 'alter system kill session '''|| sid||','||serial#||''';' from gv$session where status='INACTIVE' and last_call_et>3600*2 and EVENT='SQL*Net message from client' and sql_id='fjtr3cb67ymmg';
+
+=========================
+check application users count
+==============================

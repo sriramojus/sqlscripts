@@ -1,0 +1,34 @@
+break on report on fsmtpt skip 1
+compute sum of mtptgb on report
+compute sum of nbrfiles on report
+compute sum of mtptgb on fsmtpt
+col fsmtpt format a8 trunc
+col mtptgb format 99999.90
+col dftype format a6
+col nbrfiles format 9999999
+select 'DF' dftype,count(*) nbrfiles,
+substr(f.file_name,8,(instr(f.file_name,'/',9,1) -8)) fsmtpt,
+sum(bytes)/1024/1024/1024 mtptgb
+from dba_data_files f
+group by substr(f.file_name,8,(instr(f.file_name,'/',9,1) -8))
+union
+select 'TF' dftype,count(*) nbrfiles,
+substr(t.file_name,8,(instr(t.file_name,'/',9,1) -8)) fsmtpt,
+sum(bytes)/1024/1024/1024 mtptgb
+from dba_temp_files t
+group by substr(t.file_name,8,(instr(t.file_name,'/',9,1) -8))
+union
+select 'RL' dftype, count(*) nbrfiles,
+substr(lf.member,8,(instr(lf.member,'/',9,1) -8)) fsmtpt,
+sum(bytes)/1024/1024/1024 mtptgb
+from v$log lg, v$logfile lf
+where lf.group# = lg.group#
+group by substr(lf.member,8,(instr(lf.member,'/',9,1) -8))
+union
+select 'CF' dftype, count(*) nbrfiles,
+substr(c.name,8,(instr(c.name,'/',9,1) -8)) fsmtpt,
+0 mtptgb
+from v$controlfile c
+group by substr(c.name,8,(instr(c.name,'/',9,1) -8))
+order by 3
+/

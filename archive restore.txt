@@ -1,0 +1,18 @@
+
+1. non-prod: 
+check for which sequence the RFS gap its waiting for
+query: select process,status,sequence# from v$managed_standby;
+
+
+2. run{
+allocate channel t1 type 'SBT_TAPE';
+restore archivelog from sequence 185393 until sequence 185396;
+}
+
+once backup is restored, copy the archives to standby with below command
+
+3. scp -pr archbkp1103 orapeb1@ingn-365-pdb02:/us1101/app/arc_delete
+alter database register logfile '/us1101/app/arc_delete/archbkp1103/1_185397_866231857.dbf';
+
+4. in non-prod register each logfile with below command
+alter database register logfile '/us1101/app/arc_delete/archbkp1103/1_185397_866231857.dbf';

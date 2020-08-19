@@ -1,0 +1,5 @@
+Process : Active Duplicate(Prod to DR)
+
+step1:
+
+/home/orapeb1/rman - curvature([PEBCU1 orapeb1@glc-d-db01 rman]

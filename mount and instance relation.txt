@@ -1,0 +1,19 @@
+
+alter database recover managed standby disconnect from session;
+
+=======================================================
+
+To check if a mount is in the instance location or not
+
+select substr(name,1,instr(name,'/',-1)) path from v$datafile
+union
+select substr(name,1,instr(name,'/',-1)) path from v$tempfile
+union
+select substr(member,1,instr(member,'/',-1)) path from v$logfile
+union
+select substr(name,1,instr(name,'/',-1)) path from v$controlfile;
+
+===========================================================
+check if a new datafile name exists
+
+select file_name from dba_data_files where file_name like '%a_txn_data94%';

@@ -1,0 +1,3 @@
+Zombie
+
+ ps -ef | grep defunct

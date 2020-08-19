@@ -1,0 +1,119 @@
+select FILE_NAME,TABLESPACE_NAME from dba_temp_files where TABLESPACE_NAME='TEMP';
+
+==========================
+checking temp table space
+=======================================
+set lines 200
+col USERNAME for a15
+col TABLESPACE for a12
+col LASTCALLET for a40
+col PROGINFO for a40
+SELECT a.tablespace_name,ROUND((c.total_blocks*b.block_size)/1024/1024/1024,2)
+"Total Size [GB]",ROUND((a.used_blocks*b.block_size)/1024/1024/1024,2) "Used_size[GB]",
+ROUND(((c.total_blocks-a.used_blocks)*b.block_size)/1024/1024/1024,2) "Free_size[GB]",
+ROUND((a.max_blocks*b.block_size)/1024/1024/1024,2) "Max_Size_Ever_Used[GB]",            
+ROUND((a.max_used_blocks*b.block_size)/1024/1024/1024,2) "MaxSize_ever_Used_by_Sorts[GB]" ,
+ROUND((a.used_blocks/c.total_blocks)*100,2) "Used Percentage"
+FROM V$sort_segment a,dba_tablespaces b,(SELECT tablespace_name,SUM(blocks)
+total_blocks FROM dba_temp_files GROUP by tablespace_name) c
+WHERE a.tablespace_name=b.tablespace_name AND a.tablespace_name=c.tablespace_name;
+
+
+**************************************************************************************
+
+========================================================================================
+check gurantee mode.
+SELECT tablespace_name, retention FROM dba_tablespaces where tablespace_name ='APPS_UNDOTS1';
+
+=========================================================================
+
+62489616
+Get 10 sessions with largest temp usage :
+-----------------------------------------
+
+cursor bigtemp_sids is
+select * from (
+select s.sid,
+s.status,
+s.sql_hash_value sesshash,
+u.SQLHASH sorthash,
+s.username,
+u.tablespace,
+sum(u.blocks*p.value/1024/1024) mbused ,
+sum(u.extents) noexts,
+nvl(s.module,s.program) proginfo,
+floor(last_call_et/3600)||':'||
+floor(mod(last_call_et,3600)/60)||':'||
+mod(mod(last_call_et,3600),60) lastcallet
+from v$sort_usage u,
+v$session s,
+v$parameter p
+where u.session_addr = s.saddr
+and p.name = 'db_block_size'
+group by s.sid,s.status,s.sql_hash_value,u.sqlhash,s.username,u.tablespace,
+nvl(s.module,s.program),
+floor(last_call_et/3600)||':'||
+floor(mod(last_call_et,3600)/60)||':'||
+mod(mod(last_call_et,3600),60)
+order by 7 desc,3)
+where rownum < 11;
+
+
+===================================================
+UNDO USAGE
+
+
+set lines 140
+col name heading 'UNDO|Name' form a12
+col module heading 'Module' form a18 trunc
+col username heading 'User' form a10 wrap
+col sql_hash_value heading 'Hash Value' form 9999999999
+col totsize heading 'Undo Bytes Used' form 999,999,999,999
+col log_io heading 'Redo Log I/O' form 999,999,999
+col phy_io heading 'Physical I/O' form 999,999,999
+col used_ublk heading 'Undo Blks' form 9,999,999
+col spid heading 'Svr|PID' form 999999
+col sid heading 'SID' form 999
+col serial# heading 'Serial#' form 9999999
+
+select to_char(sysdate,'YYYY-MM-DD HH24:MI:SS') from dual;
+
+select r.name, p.spid,s.sid,s.serial#,s.username,s.module,s.sql_hash_value,t.used_ublk,used_ublk*8192 totsize,t.log_io,t.phy_io
+from v$transaction t, v$session s,v$process p, sys.v_$rollname r
+where t.ses_ADDR = s.saddr
+AND  p.addr = s.paddr
+and t.xidusn = r.usn
+order by r.name,totsize desc;
+
+select max(MAXQUERYLEN) from v$undostat;
+
+select status,sum(bytes)/1024/1024 from dba_undo_extents group by status;
+
+Select sum(bytes/1024/1024) "UNDO_TABLESPACE_SIZE in MB" from dba_data_files where tablespace_name like '%UNDO%';
+
+Select sum(bytes/1024/1024) as "UNDO_FREE_SPACE in MB" from dba_free_space where tablespace_name like '%UNDO%';
+======================================================
+
+Get UNDO session details
+
+set lines 200
+col sid for 99999
+col username for a10
+col name for a15
+select  s.sid,s.serial#,username,s.machine,
+t.used_ublk ,t.used_urec,rn.name,(t.used_ublk *8)/1024/1024 SizeGB
+from    v$transaction t,v$session s,v$rollstat rs, v$rollname rn
+where   t.addr=s.taddr and rs.usn=rn.usn and rs.usn=t.xidusn and rs.xacts>0;
+
+==================================================================
+
+Check undo segments status details
+select     tablespace_name,   
+status,
+count(extent_id) "Extent Count",
+sum(blocks) "Total Blocks",         
+sum(blocks)*8/(1024*1024) total_space
+from     dba_undo_extents
+group by    tablespace_name, status;
+
+===============================================

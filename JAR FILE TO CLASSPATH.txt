@@ -1,0 +1,11 @@
+/ua4001/oracle/DEBUE4/fs1/EBSapps/comn/java/lib/javax.json-1.1.jar
+
+
+https://docs.oracle.com/javase/tutorial/deployment/jar/downman.html
+
+1) Take backup of $CONTEXT_FILE(echo $CONTEXT_FILE)
+2) Take backup of $APPL_TOP/admin/adovars.env
+3) Modify $APPL_TOP/admin/adovars.env and append new classpath value
+4) Modify $CONTEXT_FILE and append new classpath value to the "CLASSPATH" variable in it also so that
+ Autoconfig don't overwrite the changes.
+5) Log out and Log in back to the server so that environment get set again.

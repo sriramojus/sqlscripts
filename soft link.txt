@@ -1,0 +1,2 @@
+[appltest@gblg-365-tap02 bin]$ ln -s /ua2001n/app/fs1/EBSapps/appl/xxhr/12.0.0/bin/sftp_adp_interface.prog sftp_adp_interface
+[appltest@gblg-365-tap02 bin]$ ls -ltr

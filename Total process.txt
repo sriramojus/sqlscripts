@@ -1,0 +1,68 @@
+
+select machine, count(*) from v$session where status='INACTIVE' group by machine;
+
+ ps -ef | grep oraprod|wc -l
+
+
+select machine, count(*) from v$session where status='INACTIVE' group by machine;
+
+ps -ef | grep root|wc -l
+
+ps -ef | grep orapeb1|wc -l
+
+less /proc/cpuinfo
+proc /etc/cpuinfo|wc -l
+ps -ef |wc -l
+
+ps -ef|grep -i LOCAL=NO
+r3m1nd3r
+
+kill -9 `ps -ef | grep OSWatcher.sh |  awk '{print $2}'`
+
+kill -9 `ps -ef | grep OSWatcher.sh |  awk '{print $2}'`
+
+
+select * from v$resource_limit;
+
+select LIMIT_VALUE from v$RESOURCE_LIMIT where RESOURCE_NAME like 'processes';
+
+select resource_name, current_utilization, max_utilization, limit_value 
+    from v$resource_limit 
+    where resource_name in ('processes','sessions');
+	
+	
+	select resource_name, current_utilization, max_utilization, limit_value 
+    from v$resource_limit 
+    where resource_name in ('processes');
+
+
+select username,machine,program,status,count(*) from v$session group by username,machine,program,status;
+
+select machine,status,command,sid,process,program from v$session where status='INACTIVE' and machine='evhc-chi-pap01.evhc.itciss.com';
+
+
+select username,machine,program,count(*) from v$session where status='INACTIVE';
+
+select s.status,count(1),s.username from v$process p,v$session s where paddr(+)=addr group by s.status,s.username order by 1;
+
+
+
+
+select 'alter system kill session ' || '''' || sid || ',' || serial# || '''' || ' immediate;' from  v$session where status='INACTIVE' and sql_id='fjtr3cb67ymmg' and LAST_CALL_ET>3600*2;
+
+
+select 'alter system kill session ' || '''' || sid || ',' || serial# || '''' || ' immediate;' from  v$session where status='INACTIVE' and last_call_et>3600*2 and EVENT='SQL*Net message from client' and PROGRAM like 'frmweb%';
+
+
+
+select machine,status,SQL_ID,sid,process,program from v$session where status='INACTIVE';
+
+
+select machine,status,SQL_ID,sid,process,program from v$session where status='INACTIVE' and SQL_ID='fjtr3cb67ymmg';
+1k2g6ycm0yxqb
+
+35ddcxddxmsfd
+
+
+
+

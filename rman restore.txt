@@ -1,0 +1,21 @@
+find . -size +100000b -exec ls -l {} \; - file size
+
+run{
+set archivelog destination to '/ud1004/arc_bkp16feb2019';
+restore archivelog from sequence 122189 until sequence 122190;
+}
+
+prod:/ud1004/arc_bkp16feb2019
+
+
+RMAN> run{
+set archivelog destination to '/ud1004/arc_bkp16feb2019';2>
+3> restore archivelog logseq 122189;
+4> }
+
+
+run{
+allocate channel t1 type 'DISK';
+restore archivelog sequence between 122189 and 122240;
+release channel t1;
+}

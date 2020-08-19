@@ -1,0 +1,3 @@
+ALTER USER ITCNIMBUS ACCOUNT UNLOCK
+
+SELECT username, account_status FROM dba_users where username like 'ITC%';

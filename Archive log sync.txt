@@ -1,0 +1,66 @@
+Checking Archive log Sync
+
+
+======================================
+checking if a server is standBy or NOT
+=======================================
+show parameter log;
+
+=================
+Check RFS
+==================
+select process, status, sequence# from v$managed_standby;
+===============
+Check Sync
+==================
+NON-PROD
+
+select name,open_mode,status,database_role from v$database,v$instance;
+
+select arch.thread# "thread", arch.sequence# "last sequence received", appl.sequence# "last sequence applied", (arch.sequence# - appl.sequence#) "difference"
+from(select thread# ,sequence# from v$archived_log where (thread#,first_time ) in (select thread#,max(first_time) from v$archived_log group by thread#)) arch,
+(select thread# ,sequence# from v$log_history where (thread#,first_time ) in (select thread#,max(first_time) from v$log_history group by thread#)) appl
+where arch.thread# = appl.thread# order by 1;
+
+
+FOR PROD:
+
+
+select thread#,max(sequence#) from v$archived_log where RESETLOGS_CHANGE#=(select RESETLOGS_CHANGE# from v$database) group by thread#;
+
+
+===============================
+deleting archive log
+========================================
+
+
+delete force noprompt archivelog until sequence 45480;
+delete force noprompt archivelog all completed before 'sysdate-2';
+delete force noprompt archivelog all backed up 1 times to device type sbt completed before 'sysdate-1';
+delete force noprompt archivelog all backed up 2 times to device type disk completed before 'sysdate-1/2';
+
+==================================================
+select flashback_on from v$database;
+
+=====================================
+cd /nsr/scripts/oracle
+
+cat arch_PEBUE1_rman
+
+========================
+MRP START/STOP
+======================
+MRP STOP:
+
+alter database recover managed standby database cancel;
+
+MRP START
+alter database recover managed standby database disconnect from session;
+
+
+=======================================================
+Start Catalogue(when archives are moved to different mount)
+
+catalog start with '/ud1106/scncopy_01feb2020' noprompt;
+
+recover database noredo;

@@ -1,0 +1,300 @@
+http://learnappsdbaskills.blogspot.com/2014/03/scripts-for-troubleshooting-concurrent.html
+
+https://github.com/MarisElsins/TOOLS/tree/master/SQL/APPS/ConPerfScripts
+
+===================================
+
+CHECKING LONG RUNNING REQUEST
+===================================
+
+set echo off pages 100 lines 202
+column REQUEST heading 'Request' format a9
+column PHASE heading 'Phase' format A8
+column STATUS heading 'Status' format A8
+column PROGRAM heading 'Program Name' format A60
+column SHORT heading 'Short Name' format A15
+column REQUESTOR heading 'Requestor' format A15
+column START_TIME heading 'Start Time' format A15
+column RUN_TIME justify left heading 'Time(e)' format 999999.9
+column OSPID heading 'OSPID' format a5
+column OS_PIDa heading 'OSPIDA' format a6
+column SID heading 'SID' format 99999
+column serial# heading 'Serial#' format 99999
+select substr(fcrv.request_id,1,9)REQUEST,
+decode(fcrv.phase_code,'P','Pending','R','Running','I','Inactive','Completed')PHASE,
+decode(fcrv.status_code,
+'A','Waiting',
+'B','Resuming',
+'C','Normal',
+'F','Scheduled',
+'G','Warning',
+'H','On Hold',
+'I','Normal',
+'M','No Manager',
+'Q','Standby',
+'R','Normal',
+'S','Suspended',
+'T','Terminating',
+'U','Disabled',
+'W','Paused',
+'X','Terminated',
+'Z','Waiting',fcrv.status_code)STATUS,
+substr(fcrv.program,1,60)PROGRAM,
+substr(fcrv.PROGRAM_SHORT_NAME,1,15)SHORT,
+substr(fcrv.requestor,1,15)REQUESTOR,
+-- to_char(fcrv.actual_start_date,'MM/DD/RR HH24:MI')START_TIME,
+round(((sysdate - fcrv.actual_start_date)*1440),1)RUN_TIME,
+substr(fcr.oracle_process_id,1,7)OSPID,
+s.sid,s.serial#
+--substr(fcr.os_process_id,1,7)OS_PIDa
+from apps.fnd_conc_req_summary_v fcrv,
+apps.fnd_concurrent_requests fcr,
+v$session s,
+v$process p
+where fcrv.phase_code = 'R'
+and fcrv.request_id = fcr.request_id
+and s.paddr = p.addr
+and fcr.oracle_process_id = p.spid
+and fcrv.concurrent_program_id not in ('40112','40113','36887')
+--andÂ trunc(fcrv.actual_start_date) like trunc(sysdate)
+order by PHASE, STATUS, REQUEST desc;
+
+
+
+=============================================================================================================
+To check individual requests
+
+select REQUEST_ID, PHASE_CODE, STATUS_CODE from apps.fnd_concurrent_requests where REQUEST_ID in (142840960,142835805,142814628,142835814);
+select REQUEST_ID, PHASE_CODE, STATUS_CODE from apps.fnd_concurrent_requests where REQUEST_ID=43439436;
+
+====================================================================================================
+To check individual requests parameters
+select argument_text from apps.fnd_concurrent_requests where request_id=34453610;
+================================================================================
+
+To Terminate a request from backend
+
+update apps.fnd_concurrent_requests set phase_code='C', status_code='X' where request_id in (26111475);
+
+=========================================================================
+
+Check how long a request took to complete
+
+set lines 180
+set pages 300
+col name format a20
+col QUEUE for a20
+col U_NAME for a20
+select fcr.request_id req_id,
+substr(fcq.concurrent_queue_name, 1, 20) queue,
+to_char(fcr.actual_start_date,'hh24:mi') s_time,
+substr(fcr.user_concurrent_program_name, 1, 60) name,
+substr(fcr.requestor, 1, 9 ) u_name,
+round((sysdate -actual_start_date) *24, 2) elap,
+decode(fcr.phase_code,'R','Running','P','Inactive','C','Completed', fcr.phase_code) Phase,
+substr(decode( fcr.status_code, 'A', 'WAITING', 'B', 'RESUMING',
+'C', 'NORMAL', 'D', 'CANCELLED', 'E', 'ERROR', 'F', 'SCHEDULED',
+'G', 'WARNING', 'H', 'ON HOLD', 'I', 'NORMAL', 'M', 'NO MANAGER',
+'Q', 'STANDBY', 'R', 'NORMAL', 'S', 'SUSPENDED', 'T', 'TERMINATED',
+'U', 'DISABLED', 'W', 'PAUSED', 'X', 'TERMINATED', 'Z', 'WAITING',
+'UNKNOWN'), 1, 10)
+from
+apps.fnd_concurrent_queues fcq,
+apps.fnd_concurrent_processes fcp,
+apps.fnd_conc_req_summary_v fcr
+where fcp.concurrent_queue_id = fcq.concurrent_queue_id
+and fcp.queue_application_id = fcq.application_id
+and fcr.controlling_manager = fcp.concurrent_process_id
+and fcr.request_id = '&RequstID'
+order by request_id ;
+
+
+
+
+
+========================================================================
+
+Determine which concurrent manager ran a specific concurrent request
+
+
+select b.USER_CONCURRENT_QUEUE_NAME from apps.fnd_concurrent_processes a,
+apps.fnd_concurrent_queues_vl b, apps.fnd_concurrent_requests c
+where a.CONCURRENT_QUEUE_ID = b.CONCURRENT_QUEUE_ID
+and a.CONCURRENT_PROCESS_ID = c.controlling_manager
+and c.request_id = 94485203;
+
+
+============================================================
+
+You can see the request id and other relevant information from the result.
+
+Based on the SPID associated to each running request, query the v$session orv$session_longops table to see what is the request id doing in the backend.
+
+
+
+SELECT b.sid, b.serial#, a.spid, b.program, b.osuser, b.machine,
+b.TYPE, b.event, b.action, b.p1text, b.p2text, b.p3text, b.state, c.sql_text,b.logon_time
+FROM v$process a, v$session b, v$sqltext c
+WHERE a.addr=b.paddr
+AND b.sql_hash_value = c.hash_value
+AND b.STATUS = 'ACTIVE'
+AND a.spid = '95635'
+ORDER BY a.spid, c.piece;
+================================================================================
+
+Checking Previous runs of a request
+
+set lines 200
+col "Program Name" for a30
+col "Parameter" for a50											
+SELECT /*+ rule */
+      rq.parent_request_id                   "Parent Req. ID",
+      rq.request_id                          "Req. ID",
+      tl.user_concurrent_program_name        "Program Name",
+      rq.actual_start_date                   "Start Date",
+      rq.actual_completion_date              "Completion Date",
+	  rq.ARGUMENT_TEXT                       "Parameter",
+      ROUND((rq.actual_completion_date -
+          rq.actual_start_date) * 1440, 2)   "Runtime (in Minutes)"      
+ FROM applsys.fnd_concurrent_programs_tl  tl,
+      applsys.fnd_concurrent_requests     rq
+WHERE tl.application_id        = rq.program_application_id
+  AND tl.concurrent_program_id = rq.concurrent_program_id
+  AND tl.LANGUAGE              = USERENV('LANG')
+  AND rq.actual_start_date IS NOT NULL
+  AND rq.actual_completion_date IS NOT NULL
+  AND tl.user_concurrent_program_name = 'RBRSS Print Receipt'
+  order by rq.actual_completion_date;
+   
+  ==================================================================================
+  select fcpl.user_concurrent_program_name
+     , fcp.concurrent_program_name
+     , fcp.concurrent_program_id
+     , fav.application_short_name
+     , fav.application_name
+     , fav.application_id
+     , fdfcuv.end_user_column_name
+     , fdfcuv.form_left_prompt prompt
+     , fdfcuv.enabled_flag
+     , fdfcuv.required_flag
+     , fdfcuv.display_flag
+from   fnd_concurrent_programs fcp
+     , fnd_concurrent_programs_tl fcpl
+     , fnd_descr_flex_col_usage_vl fdfcuv
+     , fnd_application_vl fav
+where  fcp.concurrent_program_id = fcpl.concurrent_program_id
+and    fcpl.user_concurrent_program_name = 'XXAS PA AR Update Fiscal Invoice'
+and    fav.application_id=fcp.application_id
+and    fcpl.language = 'US'
+and    fdfcuv.descriptive_flexfield_name = '$SRS$.' || fcp.concurrent_program_name;
+
+==================================================================================================
+Check trace enabled program
+===============================================================================================
+
+
+set linesize  100
+set pagesize 999
+column today new_value _date noprint
+select to_char(SYSDATE,'DD-MON-RR') today from dual;
+ttitle CENTER 'Debug and Trace Profile Options Set to YES'  -
+RIGHT_date ' Page:' FORMAT 999 sql.pno SKIP 2 -
+Column app_short format a6 heading "APP"
+column optname format a35 heading "PROFILE"
+column d_level format a36 heading "WHO HAS IT SET"
+column optval format a6 heading "SET TO"
+column updated format a10 heading "UPDATED ON"
+select  distinct
+        a.application_short_name app_short,
+        user_profile_option_name optname,
+        decode(level_id,
+        10001,'SITE',
+        10002,'APP : '||a2.application_short_name,
+        10003,'RESP: '||r.responsibility_key,
+        10004,'USER: '||u.user_name,
+        'Unknown') d_level,
+        profile_option_value optval,
+        v.last_update_date updated
+from fnd_profile_options_vl o,
+        fnd_profile_option_values v,
+        fnd_application a,
+        fnd_application a2,
+        fnd_responsibility r,
+        fnd_user u
+where (
+        upper(o.user_profile_option_name) like '%DEBUG%' or
+        upper(o.user_profile_option_name) like '%TRACE%'
+--or upper(o.user_profile_option_name) like '%LOGG%'
+        )
+and a.application_id = v.application_id
+and o.application_id = v.application_id
+and o.profile_option_id = v.profile_option_id
+-- Find the associate level for profile
+and r.application_id (+) = v.level_value_application_id
+and r.responsibility_id (+) = v.level_value
+and a2.application_id (+) = v.level_value
+and u.user_id (+) = v.level_value
+and profile_option_value = 'Y'
+order by 2,1,3,4;
+========================================================================
+get request name from request id
+
+select a.CONCURRENT_PROGRAM_NAME,b.REQUEST_ID from apps.fnd_concurrent_programs a,apps.fnd_concurrent_requests b where b.REQUEST_ID='15775686' and a.CONCURRENT_PROGRAM_ID=b.CONCURRENT_PROGRAM_ID;
+=============================================
+
+How to find the sid from concurrent request id
+
+The below sql retrieve the sid information for the running concurrent program.
+
+SELECT a.request_id, d.sid, d.serial# ,d.osuser,d.process , c.SPID ,d.inst_id
+FROM apps.fnd_concurrent_requests a,
+apps.fnd_concurrent_processes b,
+gv$process c,
+gv$session d
+WHERE a.controlling_manager = b.concurrent_process_id
+AND c.pid = b.oracle_process_id
+AND b.session_id=d.audsid
+AND a.request_id =&req_id
+AND a.phase_code = 'R';
+
+
+
+=====================================================
+Check Pending Requests
+
+select COUNT (distinct cwr.request_id) Peding_Requests   FROM apps.fnd_concurrent_worker_requests cwr, apps.fnd_concurrent_queues_tl cq, apps.fnd_user fu WHERE (cwr.phase_code = 'P' OR cwr.phase_code = 'R')   AND cwr.hold_flag != 'Y'   AND cwr.requested_start_date <= SYSDATE    AND cwr.concurrent_queue_id = cq.concurrent_queue_id   AND cwr.queue_application_id = cq.application_id  and cq.LANGUAGE='US'
+AND cwr.requested_by = fu.user_id and cq.user_concurrent_queue_name
+in ( select unique user_concurrent_queue_name from apps.fnd_concurrent_queues_tl);
+
+
+
+GSS Progress status
+----------------------
+
+SQL> select total_tables,round((done_tables/total_tables)*100,2) "%tables|done",round((done_ROWS/total_rows)*100,2) "%rows|done" from ( select count(*) total_tables,sum(num_rows) total_rows,sum(decode(sign(sysdate-last_analyzed-1/2),-1,1)) done_tables,sum(decode(sign(sysdate-last_analyzed-1/2),-1,num_rows)) done_rows from all_tables where owner=upper('APPS'));
+  
+  
+  
+==================================================================================
+
+
+SELECT request_id, phase_code, status_code, user_name, 
+user_concurrent_queue_name 
+FROM apps.fnd_concurrent_worker_requests cwr, 
+apps.fnd_concurrent_queues_tl cq, 
+apps.fnd_user fu 
+WHERE (cwr.phase_code = 'P' OR cwr.phase_code = 'R') 
+AND cwr.hold_flag != 'Y' 
+AND cwr.requested_start_date <= SYSDATE 
+AND cwr.concurrent_queue_id = cq.concurrent_queue_id 
+AND cwr.queue_application_id = cq.application_id 
+AND cq.LANGUAGE = 'US' 
+AND cwr.requested_by = fu.user_id 
+ORDER BY 5;
+
+
+
+
+
+
+  

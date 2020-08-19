@@ -1,0 +1,7 @@
+TO CHECK TRAC FILE
+
+show parameter background 
+
+TO SEE ALERT LOG
+
+ls -ltr /oracle/app/oracle/diag/rdbms/PROD/PROD/trace/al* - 

@@ -1,0 +1,27 @@
+
+
+1. select SQL_ID,SQL_TEXT,HASH_VALUE from v$sql where SQL_ID='dt6z1s8rpr49z';
+
+dt6z1s8rpr49z
+
+HASH_VALUE
+----------
+ 794530111
+
+
+
+
+2. Query to check plan change:
+============================
+
+set pages 8000 lines 200
+col starttime for a22
+select b.snap_id,b.sql_id, b.plan_hash_value,to_char(begin_interval_time,'YY-MM-DD HH24:MI:SS') starttime, sum(executions_delta) execs,
+  sum(elapsed_time_delta)/sum(executions_delta)/1000000 elaps_per_exec,
+  sum(cpu_time_delta)/sum(executions_delta)/1000000 cpu_per_exec,
+  sum(rows_processed_delta)/sum(executions_delta) rows_per_exec,
+  sum(disk_reads_delta)/sum(executions_delta) reads_per_exec
+  from dba_hist_snapshot a, dba_hist_sqlstat b
+where a.snap_id=b.snap_id and b.sql_id='&sql_id'
+group by b.snap_id,b.sql_id, b.plan_hash_value, to_char(begin_interval_time,'YY-MM-DD HH24:MI:SS')
+having sum(executions_delta)>0 order by 4;

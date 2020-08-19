@@ -1,0 +1,20 @@
+alert: Recompile process
+
+check if any invalids are there by executing below sql command.
+
+
+select count(*) from dba_objects where status='INVALID';
+
+select object_name, owner, status from dba_objects where object_name='APPS.FND_DCP';
+select object_name, owner, status from dba_objects where object_name in('XXTOP_AR_DirList','XXTOP_AR_DirList
+select object_name, owner, status from dba_objects where object_name like '%UTL%' and status='INVALID';
+
+TAKE THE BACKUP OF INVALID OBJECTS TABLE.
+
+create table APR_08_invalid as select * from dba_objects where status='INVALID';
+
+
+if the object is still invalid, run the below command.
+
+exec utl_recomp.recomp_parallel(10);
+======================================================

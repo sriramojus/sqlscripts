@@ -1,0 +1,25 @@
+Check Code level in EBS
+
+select ABBREVIATION, NAME, codelevel FROM AD_TRACKABLE_ENTITIES where abbreviation in ('txk','ad');
+
+=========================================================================================================
+
+
+SQL> select RELEASE_NAME from fnd_product_groups;
+
+RELEASE_NAME
+--------------------------------------------------
+12.2.7
+
+SQL> select * from apps.ad_bugs where bug_number like '%25253941%';
+
+select BUG_ID,BUG_NUMBER,BUG_STATUS from apps.ad_bugs where bug_number like '%25253941%';
+
+no rows selected
+
+SQL> select ad_patch.is_patch_applied('R12',-1,28080861) from dual;
+
+AD_PATCH.IS_PATCH_APPLIED('R12',-1,28080861)
+--------------------------------------------------------------------------------
+NOT_APPLIED
+

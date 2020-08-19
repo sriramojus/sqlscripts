@@ -1,0 +1,90 @@
+===============================================================
+blocking locks
+======================
+
+set pages 300 lines 300
+SELECT inst_id, DECODE(request,0,'Holder: ','Waiter: ')|| sid sess, id1, id2, lmode,request, type
+FROM GV$LOCK WHERE (id1, id2, type) IN (SELECT id1, id2, type FROM GV$LOCK WHERE request>0)
+ORDER BY id1, request;
+
+
+Clear locks: alter system kill session '387,36935' immediate;
+
+ select process from v$session where SID= 328
+ ================================================================
+ 
+ locks on table
+ 
+ column oracle_username format a15;
+column os_user_name format a15;
+column object_name format a37;
+column object_type format a37;
+select a.session_id,a.oracle_username, a.os_user_name, b.owner "OBJECT OWNER", b.object_name,b.object_type,a.locked_mode from 
+(select object_id, SESSION_ID, ORACLE_USERNAME, OS_USER_NAME, LOCKED_MODE from v$locked_object) a, 
+(select object_id, owner, object_name,object_type from dba_objects) b
+where a.object_id=b.object_id;
+
+=============================================================
+find serial number of SID
+
+select serial# from v$session where sid=70;
+===========================================================================================================
+Identifying the locked object
+
+select object_name from dba_objects where object_id=39641;
+
+==============================================================================================================
+Identifying the locked row
+
+select row_wait_obj#, row_wait_file#, row_wait_block#, row_wait_row# from v$session where sid=2191;
+=================================================================================================================
+
+SQL> 
+
+col OBJECT_NAME for a30
+col ROW_WAIT_OBJ# for a20
+col ROW_WAIT_FILE# for a30
+col ROW_WAIT_BLOCK# for a30
+col ROW_WAIT_ROW# for a20
+col DBMS_ROWID.ROWID_C for a50
+
+select do.object_name,row_wait_obj#, row_wait_file#, row_wait_block#, row_wait_row#,dbms_rowid.rowid_create ( 1, ROW_WAIT_OBJ#, ROW_WAIT_FILE#, ROW_WAIT_BLOCK#, ROW_WAIT_ROW# )
+  from v$session s, dba_objects do where sid=4422 and s.ROW_WAIT_OBJ# = do.OBJECT_ID ;
+  
+  Example:
+
+OBJECT_NAME     ROW_WAIT_OBJ# ROW_WAIT_FILE# ROW_WAIT_BLOCK# ROW_WAIT_ROW# DBMS_ROWID.ROWID_C
+--------------- ------------- -------------- --------------- ------------- ------------------
+TSTLOCK                 88519             16          171309             0 AAAVnHAAQAAAp0tAAA
+
+============================================================================================================
+
+To inspect the row directly
+select * from TSTLOCK where rowid='AAAHFfABiAAIe44AAA' ;
+
+
+===================================================================================
+
+
+step2:@sid.sql / step3:@unix.sql
+
+=======================================================
+
+BRANDS  LOCKING SESSIONS DETAILS
+
+Select * from apps.XXAS_AUD_BLOCKING_SESSIONS_V;
+
+
+list all sessions of a user
+SQL> select unique inst_id,sid,status,logon_time,to_char((sysdate-Logon_time)*24,'999.99') time_on_hours, action,module,'alter system kill session '''||ss.sid||','||ss.serial#||'''' kill_session from gv$session ss where ss.action like 'FRM:%DGIELKENS%'order by logon_time;
+
+
+
+apps/TiKK4G9diR
+
+brand front end: SYSADMIN_ITC_GNUNE /Beis_gn10oct/Beis@123(for Gtest)
+
+=======================================================================================================================================
+
+
+delete force noprompt archivelog all backed up 1 times to device type sbt completed before 'sysdate-1';
