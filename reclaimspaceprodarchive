@@ -1,0 +1,7 @@
+select name,status,open_mode,startup_time,database_role from v$database,v$instance;
+select thread#,max(sequence#) from v$archived_log where RESETLOGS_CHANGE#=(select RESETLOGS_CHANGE# from v$database) group by thread#;
+
+##To Reclaim space in PROD Archive mount, check prod and dr are in sync and check if latest backups compeleted normal
+
+cd /nsr/scripts/oracle
+delete force noprompt archivelog all backed up 1 times to device type sbt completed before 'sysdate-1/2';
